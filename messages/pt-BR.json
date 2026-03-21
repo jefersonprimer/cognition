@@ -136,7 +136,7 @@
     }
   },
   "LoginPage": {
-    "title": "Entrar",
+    "title": "Bem-vindo de volta",
     "subtitleLink": "criar conta",
     "rememberMe": "Lembrar de mim",
     "forgotPassword": "Esqueceu sua senha?",
@@ -150,11 +150,6 @@
     },
     "errors": {
       "invalidCredentials": "Falha no login. Verifique suas credenciais."
-    },
-    "footer": {
-      "help": "Help",
-      "privacy": "Privacy",
-      "terms": "Terms"
     }
   },
   "SignupPage": {
@@ -173,11 +168,6 @@
     },
     "errors": {
       "generic": "Falha no cadastro. Tente novamente."
-    },
-    "footer": {
-      "help": "Help",
-      "privacy": "Privacy",
-      "terms": "Terms"
     }
   },
   "ForgotPasswordPage": {

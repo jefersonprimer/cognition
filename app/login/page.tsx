@@ -57,10 +57,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-white p-6 dark:bg-zinc-800 md:bg-gray-50 md:dark:bg-zinc-900">
+    <div className="flex min-h-screen flex-col bg-white p-6 dark:bg-[#151718]">
       <main className="flex flex-1 flex-col items-center px-4 py-6 md:py-10">
         <div className="flex w-full flex-1 items-center justify-center">
-          <div className="w-full space-y-8 md:bg-white p-6 md:dark:bg-zinc-800 md:max-w-md md:rounded-xl md:border md:border-gray-200 md:p-8 md:shadow-lg md:dark:border-zinc-700">
+          <div className="w-full space-y-8 md:max-w-md md:p-8">
           <div className="flex items-center justify-center gap-2 text-center">
             
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -88,7 +88,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:border-zinc-600 dark:text-white"
                   placeholder={t("fields.emailPlaceholder")}
                 />
               </div>
@@ -104,7 +104,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:border-zinc-600 dark:text-white"
                   placeholder={t("fields.passwordPlaceholder")}
                 />
               </div>
@@ -151,7 +151,7 @@ export default function LoginPage() {
         </div>
 
         <div className="w-full py-3 md:max-w-md">
-          <div className="mx-auto flex w-full md:max-w-5xl items-center justify-between gap-3 text-sm text-gray-600 dark:text-zinc-300">
+          <div className="mx-auto flex w-full md:max-w-5xl items-center justify-center gap-3 text-sm text-gray-600 dark:text-zinc-300">
             <div className="relative">
               <button
                 type="button"
@@ -163,7 +163,7 @@ export default function LoginPage() {
               </button>
 
               {languageMenuOpen && (
-                <div className="absolute bottom-full right-0 z-20 mb-2 min-w-44 rounded-lg border border-gray-200 bg-white p-1 shadow-xl md:bottom-auto md:mt-2 md:mb-0 dark:border-zinc-700 dark:bg-zinc-900">
+                <div className="absolute bottom-full right-0 z-20 mb-2 min-w-44 rounded-lg border border-gray-200 bg-white p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
                   {languageOptions.map((option) => (
                     <button
                       key={option.value}
@@ -176,18 +176,6 @@ export default function LoginPage() {
                   ))}
                 </div>
               )}
-            </div>
-
-            <div className="flex items-center justify-end gap-4">
-              <Link href="/help/home-and-my-tasks" className="transition-colors hover:text-gray-900 dark:hover:text-white">
-                {t("footer.help")}
-              </Link>
-              <Link href="/privacy-policy" className="transition-colors hover:text-gray-900 dark:hover:text-white">
-                {t("footer.privacy")}
-              </Link>
-              <Link href="/terms-of-policy" className="transition-colors hover:text-gray-900 dark:hover:text-white">
-                {t("footer.terms")}
-              </Link>
             </div>
           </div>
         </div>
