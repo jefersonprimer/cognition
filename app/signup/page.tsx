@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
 import { useLocale, useTranslations } from "next-intl";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Eye, EyeOff } from "lucide-react";
 
 export default function SignupPage() {
   const t = useTranslations("SignupPage");
@@ -16,6 +16,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
@@ -59,7 +60,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen flex-col bg-white p-6 dark:bg-[#151718]">
       <main className="flex flex-1 flex-col items-center px-4 py-6 md:py-10">
         <div className="flex w-full flex-1 items-center justify-center">
-          <div className="w-full space-y-10 p-6 md:max-w-md md:space-y-8 md:p-8 md:dark:border-zinc-700">
+          <div className="w-full space-y-10 p-6 md:max-w-106 md:space-y-8 md:p-8 md:dark:border-zinc-700">
             <div className="flex items-center justify-center gap-2 text-center">
 
               <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -110,17 +111,26 @@ export default function SignupPage() {
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t("fields.passwordLabel")}
                   </label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:border-zinc-600 dark:text-white"
-                    placeholder={t("fields.passwordPlaceholder")}
-                  />
+                  <div className="relative mt-1">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="block w-full rounded-md border border-gray-300 px-3 py-2 pr-10 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm dark:border-zinc-600 dark:text-white"
+                      placeholder={t("fields.passwordPlaceholder")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -128,17 +138,17 @@ export default function SignupPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-zinc-800"
+                  className="group relative flex w-full justify-center rounded-md border border-transparent bg-black dark:bg-white px-4 py-2 text-sm font-medium text-white dark:text-black transition-colors hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-zinc-800"
                 >
                   {loading ? t("submitting") : t("submit")}
                 </button>
               </div>
 
-              <div className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+              <div className="mt-2 text-center text-sm text-gray-600 dark:text-gray-300">
                 {t("subtitlePrefix")}{" "}
                 <Link
                   href="/login"
-                  className="font-medium uppercase text-blue-600 transition-colors hover:text-blue-500 dark:text-blue-400"
+                  className="font-medium text-blue-400 transition-colors hover:text-blue-500 hover:underline"
                 >
                   {t("subtitleLink")}
                 </Link>

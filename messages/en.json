@@ -76,7 +76,7 @@
     "apps": {
       "mail": "Nolio Mail",
       "calendar": "Nolio Calendar",
-      "desktop": "Nolio for desktop",
+      "android": "Nolio for android",
       "settings": "Settings",
       "templates": "Templates",
       "trash": "Trash"

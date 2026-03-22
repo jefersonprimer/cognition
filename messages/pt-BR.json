@@ -76,7 +76,7 @@
     "apps": {
       "mail": "Nolio Mail",
       "calendar": "Nolio Calendar",
-      "desktop": "Nolio para desktop",
+      "android": "Nolio para android",
       "settings": "Configurações",
       "templates": "Modelos",
       "trash": "Lixeira"
@@ -137,7 +137,7 @@
   },
   "LoginPage": {
     "title": "Bem-vindo de volta",
-    "subtitleLink": "criar conta",
+    "subtitleLink": "Cadastre-se",
     "rememberMe": "Lembrar de mim",
     "forgotPassword": "Esqueceu sua senha?",
     "submit": "Entrar",

@@ -37,6 +37,7 @@ type NoteEditorProps = {
     onBlur?: () => void;
     onPageCreate?: () => void;
     editable?: boolean;
+    onSelectionChange?: (position: { top: number; left: number } | null) => void;
 };
 
 type UrlChoice = 'mention' | 'url' | 'bookmark' | 'embed';
@@ -176,7 +177,7 @@ function migrateNolioPageLinksToDiv(html: string): string {
 
 const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
     function NoteEditor(
-        { initialContent, onChange, onFocus, onBlur, onPageCreate, editable = true },
+        { initialContent, onChange, onFocus, onBlur, onPageCreate, onSelectionChange, editable = true },
         ref
     ) {
         const hasInitialisedRef = useRef(false);
@@ -234,6 +235,20 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
             ],
             content: migrateNolioPageLinksToDiv(initialContent),
             editable,
+            onSelectionUpdate: ({ editor: currentEditor }) => {
+                if (!currentEditor.isFocused) return;
+                const { view, state } = currentEditor;
+                const { from } = state.selection;
+                try {
+                    const coords = view.coordsAtPos(from);
+                    onSelectionChange?.({
+                        top: coords.bottom + window.scrollY + 8,
+                        left: coords.left + window.scrollX,
+                    });
+                } catch (e) {
+                    console.warn('Failed to get cursor coords', e);
+                }
+            },
             editorProps: {
                 attributes: {
                     class: 'note-editor-content outline-none min-h-[200px]',

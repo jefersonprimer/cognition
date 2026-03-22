@@ -12,7 +12,7 @@ import {
   Plus,
   Mail,
   Calendar,
-  Monitor,
+  Smartphone,
   Settings,
   HelpCircle,
   ChevronDown,
@@ -433,7 +433,13 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
             <div className="py-1">
               <NavItem icon={<Mail size={20} />} label={t('apps.mail')} />
               <NavItem icon={<Calendar size={20} />} label={t('apps.calendar')} />
-              <NavItem icon={<Monitor size={20} />} label={t('apps.desktop')} />
+              <NavItem 
+                icon={<Smartphone size={20} />} 
+                label={t('apps.android')} 
+                href="https://github.com/jefersonprimer/nolio/releases/tag/v1.0.0"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
             </div>
 
             <div className="my-4 text-base">
@@ -490,6 +496,8 @@ function NavItem({
   title,
   onHoverClick,
   hoverIconTitle,
+  target,
+  rel,
   hoverIcon: HoverIcon = Plus
 }: {
   icon: React.ReactNode;
@@ -500,6 +508,8 @@ function NavItem({
   title?: string;
   onHoverClick?: (e: React.MouseEvent) => void;
   hoverIconTitle?: string;
+  target?: string;
+  rel?: string;
   hoverIcon?: LucideIcon;
 }) {
   const content = (
@@ -532,7 +542,7 @@ function NavItem({
 
   if (href) {
     return (
-      <Link href={href} className={containerClasses} title={title}>
+      <Link href={href} className={containerClasses} title={title} target={target} rel={rel}>
         {content}
       </Link>
     );

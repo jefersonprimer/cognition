@@ -100,7 +100,7 @@ export default function FloatingMobileToolbar({
   return (
     <>
       <div
-        className={`fixed ${position ? '' : 'bottom-20'} inset-x-0 mx-auto z-50 w-[95vw] max-w-180 transition-all duration-200 floating-mobile-toolbar`}
+        className={`${position ? 'absolute' : 'fixed bottom-20'} inset-x-0 mx-auto z-50 w-[95vw] max-w-180 transition-all duration-200 floating-mobile-toolbar`}
         style={style}
       >
         <div className="bg-[#2f2f2f] border border-[#444] rounded-xl shadow-xl flex overflow-hidden">

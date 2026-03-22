@@ -22,6 +22,7 @@ import PageOptionsModal from '@/components/PageOptionsModal';
 import ShareModal from '@/components/ShareModal';
 import NoteEditor, { type NoteEditorHandle } from '@/components/NoteEditor';
 import FloatingToolbar from '@/components/FloatingToolbar';
+import FloatingMobileToolbar from '@/components/FloatingMobileToolbar';
 import api from '@/lib/api';
 import { Note } from '@/types/note';
 import { useAuth } from '@/context/AuthContext';
@@ -52,6 +53,18 @@ export default function NotePage() {
   const [shareButtonPosition, setShareButtonPosition] = useState<{ top: number; left: number } | null>(null);
   const [lastSavedTitle, setLastSavedTitle] = useState('');
   const [lastSavedDescription, setLastSavedDescription] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileToolbarVisible, setIsMobileToolbarVisible] = useState(false);
+  const [mobileToolbarPosition, setMobileToolbarPosition] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const titleDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const descriptionDebounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -586,18 +599,45 @@ export default function NotePage() {
               />
             </div>
 
-            <div className="pb-40">
+            <div className="pb-40 relative">
               <NoteEditor
                 key={note.id}
                 ref={noteEditorRef}
                 initialContent={editorHtml}
                 onChange={setEditorHtml}
                 onPageCreate={handleCreatePageFromEditor}
+                onFocus={() => isMobile && setIsMobileToolbarVisible(true)}
+                onBlur={() => {
+                  // Small delay to allow clicking buttons in the toolbar before it hides
+                  setTimeout(() => setIsMobileToolbarVisible(false), 200);
+                }}
+                onSelectionChange={(pos) => {
+                  if (!isMobile || !pos) return;
+                  
+                  // Adjust position to be relative to the parent .pb-40 container
+                  const parent = document.querySelector('.pb-40.relative');
+                  if (parent) {
+                    const rect = parent.getBoundingClientRect();
+                    setMobileToolbarPosition({
+                      top: pos.top - (rect.top + window.scrollY),
+                      left: pos.left - (rect.left + window.scrollX)
+                    });
+                  } else {
+                    setMobileToolbarPosition(pos);
+                  }
+                }}
               />
-              <FloatingToolbar
-                userName={session?.user?.name || session?.user?.email}
-                updatedAt={note?.updated_at}
-              />
+              {!isMobile ? (
+                <FloatingToolbar
+                  userName={session?.user?.name || session?.user?.email}
+                  updatedAt={note?.updated_at}
+                />
+              ) : (
+                <FloatingMobileToolbar 
+                  isVisible={isMobileToolbarVisible} 
+                  position={mobileToolbarPosition ?? undefined}
+                />
+              )}
             </div>
           </div>
         </div>
