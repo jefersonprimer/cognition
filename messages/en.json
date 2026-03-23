@@ -504,7 +504,7 @@
   "PrivacyPolicy": {
     "title": "Privacy Policy",
     "lastUpdated": "Last updated: March 2026",
-    "introduction": "At Cognition (Nolio), we value your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information.",
+    "introduction": "At Nolio, we value your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information.",
     "sections": {
       "collection": {
         "title": "1. Information We Collect",
@@ -531,7 +531,7 @@
   "TermsOfPolicy": {
     "title": "Terms of Use",
     "lastUpdated": "Last updated: March 2026",
-    "introduction": "By accessing or using Cognition (Nolio), you agree to comply with these Terms of Use. Please read them carefully.",
+    "introduction": "By accessing or using Nolio, you agree to comply with these Terms of Use. Please read them carefully.",
     "sections": {
       "acceptance": {
         "title": "1. Acceptance of Terms",

@@ -53,7 +53,7 @@ export default function PrivacyPolicy() {
 
         <footer className="mt-20 pt-12 border-t border-gray-200 dark:border-[#ffffff14] text-center">
           <p className="text-sm text-gray-500">
-            © {new Date().getFullYear()} Cognition (Nolio). Todos os direitos reservados.
+            © {new Date().getFullYear()} Nolio. Todos os direitos reservados.
           </p>
         </footer>
       </div>
