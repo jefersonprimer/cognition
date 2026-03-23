@@ -23,6 +23,7 @@ import ShareModal from '@/components/ShareModal';
 import NoteEditor, { type NoteEditorHandle } from '@/components/NoteEditor';
 import FloatingToolbar from '@/components/FloatingToolbar';
 import FloatingMobileToolbar from '@/components/FloatingMobileToolbar';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import api from '@/lib/api';
 import { Note } from '@/types/note';
 import { useAuth } from '@/context/AuthContext';
@@ -38,6 +39,8 @@ export default function NotePage() {
   const searchParams = useSearchParams();
   const { session } = useAuth();
   const { isSidebarOpen, setIsSidebarOpen } = useLayout();
+  const [isTrashDeleteConfirmOpen, setIsTrashDeleteConfirmOpen] = useState(false);
+  const [isDeletingFromTrash, setIsDeletingFromTrash] = useState(false);
   const { favoriteNotes, toggleFavorite, removeNoteFromFavorites } = useFavorite();
   const { updatedTitles, updateNoteTitle, updateNoteHasContent } = useNote();
 
@@ -575,7 +578,7 @@ export default function NotePage() {
                 {t('trashBanner.restorePage')}
               </button>
               <button
-                onClick={handlePermanentDelete}
+                onClick={() => setIsTrashDeleteConfirmOpen(true)}
                 className="flex items-center border border-[#f0efed] hover:border-white px-2 py-1 rounded-md gap-2 font-medium"
               >
                 <Trash2 size={16} />
@@ -584,6 +587,24 @@ export default function NotePage() {
             </div>
           </div>
         )}
+
+        <ConfirmationModal
+          open={isTrashDeleteConfirmOpen}
+          message={t('confirmTrashDelete.message')}
+          confirmText={t('confirmTrashDelete.actions.delete')}
+          cancelText={t('confirmTrashDelete.actions.cancel')}
+          loading={isDeletingFromTrash}
+          onClose={() => setIsTrashDeleteConfirmOpen(false)}
+          onConfirm={async () => {
+            setIsDeletingFromTrash(true);
+            try {
+              await handlePermanentDelete();
+            } finally {
+              setIsDeletingFromTrash(false);
+              setIsTrashDeleteConfirmOpen(false);
+            }
+          }}
+        />
 
         <div className="relative md:flex-1 md:overflow-y-auto">
           <div className="max-w-4xl mx-auto px-6 md:px-12 py-6 md:py-12">

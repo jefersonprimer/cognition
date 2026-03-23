@@ -358,6 +358,16 @@
       "loading": "Carregando...",
       "empty": "A lixeira está vazia."
     },
+    "confirmDelete": {
+      "message": "Quer mesmo excluir esta página da lixeira permanentemente?",
+      "actions": {
+        "delete": "Excluir",
+        "cancel": "Cancelar"
+      }
+    },
+    "confirmEmptyTrash": {
+      "message": "Quer mesmo excluir todas as páginas da lixeira permanentemente?"
+    },
     "actions": {
       "emptyTrashNow": "Esvaziar lixeira agora",
       "restore": "Restaurar",
@@ -473,6 +483,13 @@
       "deletedMessage": "{user} moveu esta página para a lixeira em {minutes} minutos atrás. Ela será excluída automaticamente em {days} dias.",
       "restorePage": "Restaurar página",
       "deleteFromTrash": "Excluir da lixeira"
+    },
+    "confirmTrashDelete": {
+      "message": "Quer mesmo excluir esta página da lixeira permanentemente?",
+      "actions": {
+        "delete": "Excluir",
+        "cancel": "Cancelar"
+      }
     },
     "titleActions": {
       "addIcon": "Adicionar ícone",

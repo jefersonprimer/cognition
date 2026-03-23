@@ -7,17 +7,24 @@ import api from '@/lib/api';
 import { Note } from '@/types/note';
 import { useNote } from '@/context/NoteContext';
 import { createNoteSlug } from '@/lib/utils';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 type Props = {
   open: boolean;
   onClose: () => void;
 };
 
+type ConfirmAction =
+  | { type: 'deleteNote'; id: string }
+  | { type: 'emptyTrash' };
+
 export default function TrashModal({ open, onClose }: Props) {
   const t = useTranslations('TrashModal');
   const { updatedTitles, updatedHasContent } = useNote();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const defaultNoteTitle = 'Nova página';
 
   useEffect(() => {
@@ -26,14 +33,22 @@ export default function TrashModal({ open, onClose }: Props) {
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) {
+      setConfirmAction(null);
+    }
+  }, [open]);
+
   // Handle escape key
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Escape') return;
+      if (confirmAction) setConfirmAction(null);
+      else onClose();
     }
     if (open) window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
+  }, [open, onClose, confirmAction]);
 
   const fetchDeletedNotes = async () => {
     setLoading(true);
@@ -62,20 +77,26 @@ export default function TrashModal({ open, onClose }: Props) {
   };
 
   const handlePermanentDelete = async (id: string) => {
+    setDeleting(true);
     try {
       await api.delete(`/notes/trash/${id}`);
       setNotes(prev => prev.filter(n => n.id !== id));
     } catch (error) {
       console.error('Failed to permanently delete note:', error);
+    } finally {
+      setDeleting(false);
     }
   };
 
   const handleEmptyTrash = async () => {
+    setDeleting(true);
     try {
       await api.delete('/notes/trash');
       setNotes([]);
     } catch (error) {
       console.error('Failed to empty trash:', error);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -99,7 +120,7 @@ export default function TrashModal({ open, onClose }: Props) {
           <div className="flex items-center gap-2">
             {notes.length > 0 && (
               <button 
-                onClick={handleEmptyTrash}
+                onClick={() => setConfirmAction({ type: 'emptyTrash' })}
                 className="text-xs text-red-600 hover:text-red-700 px-2 py-1 rounded hover:bg-gray-100 transition-colors dark:text-[#ff5f5f] dark:hover:text-[#ff8f8f] dark:hover:bg-[#3f3f3f]"
               >
                 {t('actions.emptyTrashNow')}
@@ -154,7 +175,7 @@ export default function TrashModal({ open, onClose }: Props) {
                     <RotateCcw size={16} />
                   </button>
                   <button 
-                    onClick={() => handlePermanentDelete(note.id)}
+                    onClick={() => setConfirmAction({ type: 'deleteNote', id: note.id })}
                     className="p-1 hover:bg-gray-200 rounded text-gray-600 hover:text-red-700 dark:hover:bg-[#3f3f3f] dark:text-[#ada9a3] dark:hover:text-[#ff8f8f]"
                     title={t('actions.deletePermanently')}
                   >
@@ -166,6 +187,24 @@ export default function TrashModal({ open, onClose }: Props) {
           )}
         </div>
       </div>
+      <ConfirmationModal
+        open={confirmAction !== null}
+        message={confirmAction?.type === 'emptyTrash' ? t('confirmEmptyTrash.message') : t('confirmDelete.message')}
+        confirmText={t('confirmDelete.actions.delete')}
+        cancelText={t('confirmDelete.actions.cancel')}
+        loading={deleting}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={async () => {
+          if (!confirmAction) return;
+          if (confirmAction.type === 'emptyTrash') {
+            await handleEmptyTrash();
+            setConfirmAction(null);
+            return;
+          }
+          await handlePermanentDelete(confirmAction.id);
+          setConfirmAction(null);
+        }}
+      />
     </div>
   );
 }
