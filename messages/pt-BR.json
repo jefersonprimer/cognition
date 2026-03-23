@@ -500,5 +500,63 @@
   "ColorModal": {
     "textColor": "Cor do texto",
     "backgroundColor": "Cor de fundo"
+  },
+  "PrivacyPolicy": {
+    "title": "Política de Privacidade",
+    "lastUpdated": "Última atualização: Março de 2026",
+    "introduction": "No Cognition (Nolio), valorizamos sua privacidade e estamos comprometidos em proteger seus dados pessoais. Esta Política de Privacidade explica como coletamos, usamos e protegemos suas informações.",
+    "sections": {
+      "collection": {
+        "title": "1. Informações que Coletamos",
+        "content": "Coletamos informações que você nos fornece diretamente, como seu nome, endereço de e-mail e qualquer conteúdo que você crie ou carregue na plataforma."
+      },
+      "usage": {
+        "title": "2. Como Usamos Suas Informações",
+        "content": "Usamos seus dados para fornecer, manter e melhorar nossos serviços, processar transações e enviar comunicações relacionadas ao serviço."
+      },
+      "sharing": {
+        "title": "3. Compartilhamento de Dados",
+        "content": "Não vendemos nem alugamos suas informações pessoais a terceiros. Podemos compartilhar dados apenas quando necessário para cumprir obrigações legais ou fornecer o serviço (ex: provedores de infraestrutura)."
+      },
+      "security": {
+        "title": "4. Segurança",
+        "content": "Implementamos medidas de segurança técnicas e organizacionais para proteger suas informações, incluindo criptografia e armazenamento seguro via Supabase."
+      },
+      "rights": {
+        "title": "5. Seus Direitos",
+        "content": "Você tem o direito de acessar, corrigir ou excluir seus dados pessoais a qualquer momento através das configurações da sua conta."
+      }
+    }
+  },
+  "TermsOfPolicy": {
+    "title": "Termos de Uso",
+    "lastUpdated": "Última atualização: Março de 2026",
+    "introduction": "Ao acessar ou usar o Cognition (Nolio), você concorda em cumprir estes Termos de Uso. Leia-os atentamente.",
+    "sections": {
+      "acceptance": {
+        "title": "1. Aceitação dos Termos",
+        "content": "Ao criar uma conta ou usar nossos serviços, você aceita estes termos integralmente."
+      },
+      "accounts": {
+        "title": "2. Contas de Usuário",
+        "content": "Você é responsável por manter a confidencialidade de sua conta e senha, e por todas as atividades que ocorrem em sua conta."
+      },
+      "content": {
+        "title": "3. Conteúdo do Usuário",
+        "content": "Você mantém todos os direitos de propriedade sobre o conteúdo que cria. Ao postar conteúdo, você nos concede uma licença mundial para hospedar e exibir esse conteúdo apenas para fornecer o serviço."
+      },
+      "conduct": {
+        "title": "4. Conduta Proibida",
+        "content": "Você concorda em não usar o serviço para qualquer finalidade ilegal, abusiva ou que viole os direitos de terceiros."
+      },
+      "termination": {
+        "title": "5. Encerramento",
+        "content": "Reservamo-nos o direito de suspender ou encerrar seu acesso ao serviço a qualquer momento, por qualquer motivo, sem aviso prévio."
+      },
+      "liability": {
+        "title": "6. Limitação de Responsabilidade",
+        "content": "O serviço é fornecido 'como está', sem garantias de qualquer tipo. Não somos responsáveis por perdas de dados ou interrupções de serviço."
+      }
+    }
   }
 }

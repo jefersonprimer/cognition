@@ -500,5 +500,63 @@
   "ColorModal": {
     "textColor": "Cor do texto",
     "backgroundColor": "Cor de fundo"
+  },
+  "PrivacyPolicy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: March 2026",
+    "introduction": "At Cognition (Nolio), we value your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information.",
+    "sections": {
+      "collection": {
+        "title": "1. Information We Collect",
+        "content": "We collect information you provide directly to us, such as your name, email address, and any content you create or upload to the platform."
+      },
+      "usage": {
+        "title": "2. How We Use Your Information",
+        "content": "We use your data to provide, maintain, and improve our services, process transactions, and send service-related communications."
+      },
+      "sharing": {
+        "title": "3. Data Sharing",
+        "content": "We do not sell or rent your personal information to third parties. We may share data only when necessary to comply with legal obligations or provide the service (e.g., infrastructure providers)."
+      },
+      "security": {
+        "title": "4. Security",
+        "content": "We implement technical and organizational security measures to protect your information, including encryption and secure storage via Supabase."
+      },
+      "rights": {
+        "title": "5. Your Rights",
+        "content": "You have the right to access, correct, or delete your personal data at any time through your account settings."
+      }
+    }
+  },
+  "TermsOfPolicy": {
+    "title": "Terms of Use",
+    "lastUpdated": "Last updated: March 2026",
+    "introduction": "By accessing or using Cognition (Nolio), you agree to comply with these Terms of Use. Please read them carefully.",
+    "sections": {
+      "acceptance": {
+        "title": "1. Acceptance of Terms",
+        "content": "By creating an account or using our services, you accept these terms in full."
+      },
+      "accounts": {
+        "title": "2. User Accounts",
+        "content": "You are responsible for maintaining the confidentiality of your account and password, and for all activities that occur under your account."
+      },
+      "content": {
+        "title": "3. User Content",
+        "content": "You retain all ownership rights to the content you create. By posting content, you grant us a worldwide license to host and display that content only to provide the service."
+      },
+      "conduct": {
+        "title": "4. Prohibited Conduct",
+        "content": "You agree not to use the service for any illegal, abusive, or rights-violating purpose."
+      },
+      "termination": {
+        "title": "5. Termination",
+        "content": "We reserve the right to suspend or terminate your access to the service at any time, for any reason, without prior notice."
+      },
+      "liability": {
+        "title": "6. Limitation of Liability",
+        "content": "The service is provided 'as is', without warranties of any kind. We are not liable for data loss or service interruptions."
+      }
+    }
   }
 }
