@@ -69,8 +69,7 @@ export default function NotePage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const titleDebounceRef = useRef<NodeJS.Timeout | null>(null);
-  const descriptionDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const saveDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   const noteEditorRef = useRef<NoteEditorHandle>(null);
@@ -174,57 +173,39 @@ export default function NotePage() {
   }, [title, descriptionText, note, loading, storedDefaultTitle, updateNoteHasContent]);
 
   useEffect(() => {
+    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
     if (!note || !session || loading) return;
-    if (title === lastSavedTitle) return;
+    const titleChanged = title !== lastSavedTitle;
+    const descriptionChanged = editorHtml !== lastSavedDescription;
 
-    if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
+    if (!titleChanged && !descriptionChanged) return;
 
-    titleDebounceRef.current = setTimeout(async () => {
+    saveDebounceRef.current = setTimeout(async () => {
       try {
+        const payload: { title?: string; description?: string } = {};
+        if (titleChanged) payload.title = title;
+        if (descriptionChanged) payload.description = editorHtml;
+
         await api.put(
           `/notes/${note.id}`,
-          { title },
+          payload,
           { headers: { Authorization: `Bearer ${session.accessToken}` } }
         );
-        setLastSavedTitle(title);
+        if (titleChanged) setLastSavedTitle(title);
+        if (descriptionChanged) setLastSavedDescription(editorHtml);
       } catch (saveError) {
-        console.error('Failed to save title', saveError);
-      }
-    }, 800);
-
-    return () => {
-      if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
-    };
-  }, [title, note, session, loading, lastSavedTitle]);
-
-  useEffect(() => {
-    if (!note || !session || loading) return;
-    if (editorHtml === lastSavedDescription) return;
-
-    if (descriptionDebounceRef.current) clearTimeout(descriptionDebounceRef.current);
-
-    descriptionDebounceRef.current = setTimeout(async () => {
-      try {
-        await api.put(
-          `/notes/${note.id}`,
-          { description: editorHtml },
-          { headers: { Authorization: `Bearer ${session.accessToken}` } }
-        );
-        setLastSavedDescription(editorHtml);
-      } catch (saveError) {
-        console.error('Failed to save description', saveError);
+        console.error('Failed to save note', saveError);
       }
     }, 1000);
 
     return () => {
-      if (descriptionDebounceRef.current) clearTimeout(descriptionDebounceRef.current);
+      if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
     };
-  }, [editorHtml, note, session, loading, lastSavedDescription]);
+  }, [title, editorHtml, note, session, loading, lastSavedTitle, lastSavedDescription]);
 
   useEffect(() => {
     return () => {
-      if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
-      if (descriptionDebounceRef.current) clearTimeout(descriptionDebounceRef.current);
+      if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
     };
   }, []);
 
