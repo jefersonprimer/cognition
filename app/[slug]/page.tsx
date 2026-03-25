@@ -29,7 +29,7 @@ import { Note } from '@/types/note';
 import { useAuth } from '@/context/AuthContext';
 import { useLayout } from '@/context/LayoutContext';
 import { useFavorite } from '@/context/FavoriteContext';
-import { useNote } from '@/context/NoteContext';
+import { useNoteActions, useNoteTitle } from '@/context/NoteContext';
 import { createNoteSlug, extractIdFromSlug } from '@/lib/utils';
 
 export default function NotePage() {
@@ -42,7 +42,7 @@ export default function NotePage() {
   const [isTrashDeleteConfirmOpen, setIsTrashDeleteConfirmOpen] = useState(false);
   const [isDeletingFromTrash, setIsDeletingFromTrash] = useState(false);
   const { favoriteNotes, toggleFavorite, removeNoteFromFavorites } = useFavorite();
-  const { updatedTitles, updateNoteTitle, updateNoteHasContent } = useNote();
+  const { updateNoteTitle, updateNoteHasContent } = useNoteActions();
 
   const [note, setNote] = useState<Note | null>(null);
   const [parentNote, setParentNote] = useState<Note | null>(null);
@@ -59,6 +59,7 @@ export default function NotePage() {
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileToolbarVisible, setIsMobileToolbarVisible] = useState(false);
   const [mobileToolbarPosition, setMobileToolbarPosition] = useState<{ top: number; left: number } | null>(null);
+  const parentLiveTitle = useNoteTitle(parentNote?.id);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -126,6 +127,7 @@ export default function NotePage() {
         setEditorHtml(nextHtml);
         setLastSavedTitle(rawTitle);
         setLastSavedDescription(rawDescription);
+        updateNoteTitle(noteData.id, rawTitle);
 
         const hasInitialContent =
           rawTitle.trim() !== '' &&
@@ -442,10 +444,10 @@ export default function NotePage() {
               {parentNote && (
                 <>
 	                  <Link
-	                    href={`/${createNoteSlug(updatedTitles[parentNote.id] || parentNote.title, parentNote.id)}`}
+	                    href={`/${createNoteSlug(parentLiveTitle ?? parentNote.title, parentNote.id)}`}
 	                    className="text-sm text-gray-500 hover:text-gray-900 truncate max-w-[120px] md:max-w-[200px] hover:bg-gray-100 dark:text-[#ada9a3] dark:hover:text-[#f0efed] dark:hover:bg-[#fffff315] px-2 py-1 rounded-md transition-colors"
 	                  >
-	                    {updatedTitles[parentNote.id] || parentNote.title || displayDefaultTitle}
+	                    {(parentLiveTitle ?? parentNote.title) || displayDefaultTitle}
 	                  </Link>
 	                  <ChevronRight size={14} className="text-gray-400 dark:text-[#7d7a75]" />
 	                </>

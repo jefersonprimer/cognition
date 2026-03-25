@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Note } from '@/types/note';
-import { useNote } from '@/context/NoteContext';
+import { useNoteHasContent, useNoteTitle } from '@/context/NoteContext';
 import { createNoteSlug } from '@/lib/utils';
 import ConfirmationModal from '@/components/ConfirmationModal';
 
@@ -20,7 +20,6 @@ type ConfirmAction =
 
 export default function TrashModal({ open, onClose }: Props) {
   const t = useTranslations('TrashModal');
-  const { updatedTitles, updatedHasContent } = useNote();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
@@ -145,44 +144,17 @@ export default function TrashModal({ open, onClose }: Props) {
             </div>
           ) : (
             notes.map(note => (
-              <div 
+              <TrashNoteRow
                 key={note.id} 
-                className="group flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-gray-100 text-gray-900 transition-colors dark:hover:bg-[#2f2f2f] dark:text-[#f0efed]"
-              >
-                <Link 
-                  href={`/${createNoteSlug((updatedTitles[note.id] !== undefined ? updatedTitles[note.id] : note.title) || t('defaultNoteTitle'), note.id)}`}
-                  onClick={onClose}
-                  className="flex items-center gap-1 overflow-hidden flex-1"
-                >
-                  { (updatedHasContent[note.id] !== undefined 
-                      ? updatedHasContent[note.id] 
-                      : (note.title && note.title !== defaultNoteTitle && note.title.trim() !== '' && note.description && note.description.trim() !== '')) ? (
-                    <FileText size={18} className="shrink-0" />
-                  ) : (
-                    <File size={18} className="shrink-0" />
-                  )}
-                  <span className="text-sm truncate">
-                    {(updatedTitles[note.id] !== undefined ? updatedTitles[note.id] : note.title) || t('defaultNoteTitle')}
-                  </span>
-                </Link>
-                
-                <div className="flex items-center gap-1 shrink-0">
-                  <button 
-                    onClick={() => handleRestore(note.id)}
-                    className="p-1 hover:bg-gray-200 rounded text-gray-600 hover:text-gray-900 dark:hover:bg-[#3f3f3f] dark:text-[#ada9a3] dark:hover:text-white"
-                    title={t('actions.restore')}
-                  >
-                    <RotateCcw size={16} />
-                  </button>
-                  <button 
-                    onClick={() => setConfirmAction({ type: 'deleteNote', id: note.id })}
-                    className="p-1 hover:bg-gray-200 rounded text-gray-600 hover:text-red-700 dark:hover:bg-[#3f3f3f] dark:text-[#ada9a3] dark:hover:text-[#ff8f8f]"
-                    title={t('actions.deletePermanently')}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
+                note={note}
+                defaultNoteTitle={defaultNoteTitle}
+                fallbackTitle={t('defaultNoteTitle')}
+                onClose={onClose}
+                onRestore={() => handleRestore(note.id)}
+                onDelete={() => setConfirmAction({ type: 'deleteNote', id: note.id })}
+                restoreLabel={t('actions.restore')}
+                deleteLabel={t('actions.deletePermanently')}
+              />
             ))
           )}
         </div>
@@ -205,6 +177,69 @@ export default function TrashModal({ open, onClose }: Props) {
           setConfirmAction(null);
         }}
       />
+    </div>
+  );
+}
+
+function TrashNoteRow({
+  note,
+  defaultNoteTitle,
+  fallbackTitle,
+  onClose,
+  onRestore,
+  onDelete,
+  restoreLabel,
+  deleteLabel,
+}: {
+  note: Note
+  defaultNoteTitle: string
+  fallbackTitle: string
+  onClose: () => void
+  onRestore: () => void
+  onDelete: () => void
+  restoreLabel: string
+  deleteLabel: string
+}) {
+  const liveTitle = useNoteTitle(note.id);
+  const liveHasContent = useNoteHasContent(note.id);
+  const displayTitle = (liveTitle ?? note.title) || fallbackTitle;
+  const hasContent = liveHasContent !== undefined
+    ? liveHasContent
+    : (note.title && note.title !== defaultNoteTitle && note.title.trim() !== '' && note.description && note.description.trim() !== '');
+
+  return (
+    <div className="group flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-gray-100 text-gray-900 transition-colors dark:hover:bg-[#2f2f2f] dark:text-[#f0efed]">
+      <Link
+        href={`/${createNoteSlug(displayTitle, note.id)}`}
+        onClick={onClose}
+        className="flex items-center gap-1 overflow-hidden flex-1"
+      >
+        {hasContent ? (
+          <FileText size={18} className="shrink-0" />
+        ) : (
+          <File size={18} className="shrink-0" />
+        )}
+        <span className="text-sm truncate">
+          {displayTitle}
+        </span>
+      </Link>
+
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          onClick={onRestore}
+          className="p-1 hover:bg-gray-200 rounded text-gray-600 hover:text-gray-900 dark:hover:bg-[#3f3f3f] dark:text-[#ada9a3] dark:hover:text-white"
+          title={restoreLabel}
+        >
+          <RotateCcw size={16} />
+        </button>
+        <button
+          onClick={onDelete}
+          className="p-1 hover:bg-gray-200 rounded text-gray-600 hover:text-red-700 dark:hover:bg-[#3f3f3f] dark:text-[#ada9a3] dark:hover:text-[#ff8f8f]"
+          title={deleteLabel}
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
     </div>
   );
 }

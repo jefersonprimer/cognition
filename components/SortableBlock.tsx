@@ -10,7 +10,7 @@ import UrlPasteModal from './UrlPasteModal';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { isLikelyCode } from '@/lib/utils';
-import { useNote } from '@/context/NoteContext';
+import { useNoteTitle } from '@/context/NoteContext';
 
 interface SortableBlockProps {
   id: string;
@@ -44,7 +44,6 @@ const PREFIXES: Record<string, string> = {
 };
 
 export function SortableBlock({ id, type, content, childTitles = {}, onChange, onKeyDown, inputRef, onPasteMultiLine, listNumber, isSelected, onSelect, onFocus, onBlur }: SortableBlockProps) {
-  const { updatedTitles } = useNote();
   const {
     attributes,
     listeners,
@@ -499,39 +498,20 @@ export function SortableBlock({ id, type, content, childTitles = {}, onChange, o
   if (type === 'page') {
     const [pageId, ...titleParts] = content.split('|');
     const storedTitle = titleParts.join('|');
-    const liveTitle = updatedTitles[pageId] || childTitles[pageId] || storedTitle || "Nova página";
 
     return (
-      <div
-        ref={setNodeRef}
-        data-block-id={id}
+      <PageBlock
+        id={id}
+        pageId={pageId}
+        storedTitle={storedTitle}
+        childTitles={childTitles}
+        setNodeRef={setNodeRef}
         style={style}
-        className={`group flex items-start -ml-12 pl-2 py-1 relative rounded transition-colors ${getContainerMargins()}`}
-      >
-        <div className={`absolute left-0 top-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity px-1 select-none z-10 ${lineHeight}`}>
-          <button tabIndex={-1} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
-            <Plus size={16} />
-          </button>
-          <button
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-grab active:cursor-grabbing"
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical size={16} />
-          </button>
-        </div>
-        <div className="flex-1 ml-10">
-          <Link
-            href={`/${pageId}`}
-            className="flex items-center gap-2 w-full p-1 hover:bg-[#2f2f2f] rounded transition-colors group/link no-underline text-white"
-          >
-            <FileText size={20} className="text-[#9b9b9b] group-hover/link:text-white shrink-0" />
-            <span className="text-base text-white font-medium truncate underline-offset-4 group-hover/link:underline">
-              {liveTitle}
-            </span>
-          </Link>
-        </div>
-      </div>
+        getContainerMargins={getContainerMargins}
+        lineHeight={lineHeight}
+        attributes={attributes}
+        listeners={listeners}
+      />
     );
   }
 
@@ -812,4 +792,64 @@ export function SortableBlock({ id, type, content, childTitles = {}, onChange, o
       </div>
     </div>
   );
+}
+
+function PageBlock({
+  id,
+  pageId,
+  storedTitle,
+  childTitles,
+  setNodeRef,
+  style,
+  getContainerMargins,
+  lineHeight,
+  attributes,
+  listeners,
+}: {
+  id: string
+  pageId: string
+  storedTitle: string
+  childTitles: Record<string, string>
+  setNodeRef: (node: HTMLElement | null) => void
+  style: React.CSSProperties
+  getContainerMargins: () => string
+  lineHeight: string
+  attributes: Record<string, unknown>
+  listeners: Record<string, unknown> | undefined
+}) {
+  const liveTitle = useNoteTitle(pageId)
+  const resolvedTitle = liveTitle || childTitles[pageId] || storedTitle || 'Nova página'
+
+  return (
+    <div
+      ref={setNodeRef}
+      data-block-id={id}
+      style={style}
+      className={`group flex items-start -ml-12 pl-2 py-1 relative rounded transition-colors ${getContainerMargins()}`}
+    >
+      <div className={`absolute left-0 top-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity px-1 select-none z-10 ${lineHeight}`}>
+        <button tabIndex={-1} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
+          <Plus size={16} />
+        </button>
+        <button
+          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-grab active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical size={16} />
+        </button>
+      </div>
+      <div className="flex-1 ml-10">
+        <Link
+          href={`/${pageId}`}
+          className="flex items-center gap-2 w-full p-1 hover:bg-[#2f2f2f] rounded transition-colors group/link no-underline text-white"
+        >
+          <FileText size={20} className="text-[#9b9b9b] group-hover/link:text-white shrink-0" />
+          <span className="text-base text-white font-medium truncate underline-offset-4 group-hover/link:underline">
+            {resolvedTitle}
+          </span>
+        </Link>
+      </div>
+    </div>
+  )
 }

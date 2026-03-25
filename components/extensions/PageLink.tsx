@@ -5,7 +5,7 @@ import { ReactNodeViewRenderer, NodeViewWrapper, type NodeViewProps } from '@tip
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileText } from 'lucide-react';
-import { useNote } from '@/context/NoteContext';
+import { useNoteTitle } from '@/context/NoteContext';
 import api from '@/lib/api';
 
 // ─── React Component for the Node View ────────────────────────────────────────
@@ -13,7 +13,7 @@ import api from '@/lib/api';
 function PageLinkView({ node }: NodeViewProps) {
     const pageId = String(node.attrs.pageId || '');
     const attrTitle = String(node.attrs.title || '');
-    const { updatedTitles } = useNote();
+    const liveTitle = useNoteTitle(pageId);
     const router = useRouter();
     const [fetchedTitle, setFetchedTitle] = useState<string>('');
     const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ function PageLinkView({ node }: NodeViewProps) {
     // While loading, suppress the default "Nova página" to avoid a flash
     const hasRealAttrTitle = attrTitle && attrTitle !== 'Nova página';
     const displayTitle =
-        updatedTitles[pageId] ||
+        liveTitle ||
         fetchedTitle ||
         (loading ? (hasRealAttrTitle ? attrTitle : '') : attrTitle) ||
         'Nova página';

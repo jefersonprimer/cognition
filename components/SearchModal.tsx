@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import api from '@/lib/api'
 import { Note } from '@/types/note'
 import { createNoteSlug } from '@/lib/utils'
-import { useNote } from '@/context/NoteContext';
+import { useNoteHasContent, useNoteTitle } from '@/context/NoteContext';
 
 type Props = {
   open: boolean
@@ -17,7 +17,6 @@ export default function SearchModal({ open, onClose }: Props) {
   const t = useTranslations('SearchModal')
   const locale = useLocale()
   const router = useRouter()
-  const { updatedTitles } = useNote()
   const defaultNoteTitle = 'Nova página'
   const [query, setQuery] = useState('')
   const [notes, setNotes] = useState<Note[]>([])
@@ -70,9 +69,8 @@ export default function SearchModal({ open, onClose }: Props) {
     return () => clearTimeout(timeoutId)
   }, [open, query])
 
-  const handleSelect = (note: Note) => {
+  const handleSelect = (note: Note, displayTitle: string) => {
     onClose()
-    const displayTitle = updatedTitles[note.id] || note.title || t('defaultNoteTitle')
     const slug = createNoteSlug(displayTitle, note.id)
     router.push(`/${slug}`)
   }
@@ -184,12 +182,12 @@ export default function SearchModal({ open, onClose }: Props) {
                  Object.entries(groupedNotes).map(([dateLabel, groupNotes]) => (
                     <Section key={dateLabel} title={dateLabel}>
                         {groupNotes.map(note => (
-                            <Item 
+                            <SearchResultItem
                                 key={note.id} 
-                                title={(updatedTitles[note.id] !== undefined ? updatedTitles[note.id] : note.title) || t('defaultNoteTitle')}
-                                defaultNoteTitle={defaultNoteTitle}
                                 note={note}
-                                onClick={() => handleSelect(note)}
+                                defaultNoteTitle={defaultNoteTitle}
+                                onClick={(displayTitle) => handleSelect(note, displayTitle)}
+                                fallbackTitle={t('defaultNoteTitle')}
                             />
                         ))}
                     </Section>
@@ -240,6 +238,30 @@ export default function SearchModal({ open, onClose }: Props) {
   )
 }
 
+function SearchResultItem({
+  note,
+  defaultNoteTitle,
+  fallbackTitle,
+  onClick,
+}: {
+  note: Note
+  defaultNoteTitle: string
+  fallbackTitle: string
+  onClick: (displayTitle: string) => void
+}) {
+  const liveTitle = useNoteTitle(note.id)
+  const displayTitle = (liveTitle ?? note.title) || fallbackTitle
+
+  return (
+    <Item
+      title={displayTitle}
+      defaultNoteTitle={defaultNoteTitle}
+      note={note}
+      onClick={() => onClick(displayTitle)}
+    />
+  )
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-3">
@@ -252,9 +274,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Item({ title, note, onClick, defaultNoteTitle }: { title: string; note: Note; onClick: () => void; defaultNoteTitle: string }) {
-  const { updatedHasContent } = useNote()
-  const hasContent = updatedHasContent[note.id] !== undefined 
-    ? updatedHasContent[note.id] 
+  const liveHasContent = useNoteHasContent(note.id)
+  const hasContent = liveHasContent !== undefined
+    ? liveHasContent
     : (note.title && note.title !== defaultNoteTitle && note.title.trim() !== '' && note.description && note.description.trim() !== '')
 
   return (

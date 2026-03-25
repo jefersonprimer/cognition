@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { memo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -27,7 +27,7 @@ import api from '@/lib/api';
 import { Note } from '@/types/note';
 import { createNoteSlug, formatRelativeDate } from '@/lib/utils';
 import { useFavorite } from '@/context/FavoriteContext';
-import { useNote } from '@/context/NoteContext';
+import { useNoteHasContent, useNoteTitle } from '@/context/NoteContext';
 import { Session } from '@/context/AuthContext';
 import Toast from './Toast';
 
@@ -53,7 +53,7 @@ export function SidebarItemSkeleton({ depth = 0 }: { depth?: number }) {
   );
 }
 
-export default function SidebarItem({
+function SidebarItem({
   note,
   depth = 0,
   session,
@@ -74,13 +74,14 @@ export default function SidebarItem({
   const menuRef = useRef<HTMLDivElement>(null);
   
   const { favoriteNotes, toggleFavorite, removeNoteFromFavorites } = useFavorite();
-  const { updatedTitles, updatedHasContent } = useNote();
+  const liveTitle = useNoteTitle(note.id);
+  const liveHasContent = useNoteHasContent(note.id);
   const isFavorite = favoriteNotes.some(n => n.id === note.id);
 
   const defaultNoteTitle = 'Nova página';
-  const displayTitle = (updatedTitles[note.id] !== undefined ? updatedTitles[note.id] : note.title) || t('defaultNoteTitle');
-  const hasContent = updatedHasContent[note.id] !== undefined 
-    ? updatedHasContent[note.id] 
+  const displayTitle = (liveTitle ?? note.title) || t('defaultNoteTitle');
+  const hasContent = liveHasContent !== undefined
+    ? liveHasContent
     : (note.title && note.title !== defaultNoteTitle && note.title.trim() !== '' && note.description && note.description.trim() !== '');
   
   const noteHref = `/${createNoteSlug(displayTitle, note.id)}`;
@@ -483,3 +484,5 @@ export default function SidebarItem({
     </div>
   );
 }
+
+export default memo(SidebarItem);

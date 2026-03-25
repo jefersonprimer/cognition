@@ -6,7 +6,7 @@ import { Link2, FileText, File } from 'lucide-react'
 import api from '@/lib/api'
 import { Note } from '@/types/note'
 import { createNoteSlug } from '@/lib/utils'
-import { useNote } from '@/context/NoteContext'
+import { useNoteHasContent, useNoteTitle } from '@/context/NoteContext'
 
 type Props = {
     onApplyLink: (url: string) => void
@@ -16,7 +16,6 @@ type Props = {
 
 export default function LinkModal({ onApplyLink, onClose, initialUrl }: Props) {
     const t = useTranslations('LinkModal')
-    const { updatedTitles, updatedHasContent } = useNote()
     const [url, setUrl] = useState('')
     const [notes, setNotes] = useState<Note[]>([])
     const [loading, setLoading] = useState(false)
@@ -86,7 +85,7 @@ export default function LinkModal({ onApplyLink, onClose, initialUrl }: Props) {
     }
 
     const handleNoteSelect = (note: Note) => {
-        const displayTitle = updatedTitles[note.id] || note.title || t('defaultNoteTitle')
+        const displayTitle = note.title || t('defaultNoteTitle')
         const slug = createNoteSlug(displayTitle, note.id)
         onApplyLink(`/${slug}`)
     }
@@ -161,32 +160,64 @@ export default function LinkModal({ onApplyLink, onClose, initialUrl }: Props) {
                             {t('sections.linkToNote')}
                         </div>
                         {notes.slice(0, 8).map((note, index) => {
-                            const title = (updatedTitles[note.id] !== undefined ? updatedTitles[note.id] : note.title) || t('defaultNoteTitle')
-                            const hasContent = updatedHasContent[note.id] !== undefined
-                                ? updatedHasContent[note.id]
-                                : (note.title && note.title !== defaultNoteTitle && note.title.trim() !== '' && note.description && note.description.trim() !== '')
-
                             return (
-                                <button
+                                <LinkNoteOption
                                     key={note.id}
-                                    onMouseDown={(e) => {
-                                        e.preventDefault()
-                                        handleNoteSelect(note)
+                                    note={note}
+                                    selected={selectedIndex === index}
+                                    defaultNoteTitle={defaultNoteTitle}
+                                    fallbackTitle={t('defaultNoteTitle')}
+                                    onSelect={(displayTitle) => {
+                                        const slug = createNoteSlug(displayTitle, note.id)
+                                        onApplyLink(`/${slug}`)
                                     }}
                                     onMouseEnter={() => setSelectedIndex(index)}
-                                    className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm transition-colors ${selectedIndex === index ? 'bg-[#2f2f2f] text-white' : 'text-[#d4d4d4] hover:bg-[#2f2f2f]'
-                                        }`}
-                                >
-                                    <span className="text-gray-400 shrink-0">
-                                        {hasContent ? <FileText size={15} /> : <File size={15} />}
-                                    </span>
-                                    <span className="truncate">{title}</span>
-                                </button>
+                                />
                             )
                         })}
                     </div>
                 )}
             </div>
         </div>
+    )
+}
+
+function LinkNoteOption({
+    note,
+    selected,
+    defaultNoteTitle,
+    fallbackTitle,
+    onSelect,
+    onMouseEnter,
+}: {
+    note: Note
+    selected: boolean
+    defaultNoteTitle: string
+    fallbackTitle: string
+    onSelect: (displayTitle: string) => void
+    onMouseEnter: () => void
+}) {
+    const liveTitle = useNoteTitle(note.id)
+    const liveHasContent = useNoteHasContent(note.id)
+    const title = (liveTitle ?? note.title) || fallbackTitle
+    const hasContent = liveHasContent !== undefined
+        ? liveHasContent
+        : (note.title && note.title !== defaultNoteTitle && note.title.trim() !== '' && note.description && note.description.trim() !== '')
+
+    return (
+        <button
+            onMouseDown={(e) => {
+                e.preventDefault()
+                onSelect(title)
+            }}
+            onMouseEnter={onMouseEnter}
+            className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm transition-colors ${selected ? 'bg-[#2f2f2f] text-white' : 'text-[#d4d4d4] hover:bg-[#2f2f2f]'
+                }`}
+        >
+            <span className="text-gray-400 shrink-0">
+                {hasContent ? <FileText size={15} /> : <File size={15} />}
+            </span>
+            <span className="truncate">{title}</span>
+        </button>
     )
 }
