@@ -15,30 +15,7 @@ Este documento detalha os pontos críticos identificados na arquitetura atual do
 
 ---
 
-## 2. [MÉDIO] Busca e Indexação (Scalabilidade de Dados)
-**Local:** `SupabaseNoteRepository.ts` (Método `search`)
-
-*   **Problema:** O uso de `.ilike('%query%')` não escala. O PostgreSQL não consegue usar índices B-Tree para buscas que começam com caractere coringa (`%`).
-*   **Impacto:** A busca ficará lenta (Full Table Scan) assim que o usuário atingir algumas centenas de notas longas.
-*   **Solução Recomendada:**
-    *   Habilitar o **Postgres Full Text Search** no Supabase.
-    *   Utilizar colunas `tsvector` e o operador `.textSearch()` do Supabase para buscas instantâneas e suporte a pesos (ex: título vale mais que o corpo).
-
----
-
-## 3. [BAIXO] Segurança de Dados e Offline (Resiliência)
-**Local:** `NoteEditor.tsx`
-
-*   **Problema:** Se a conexão falhar ou o navegador fechar durante o debounce, o progresso entre o último save e a alteração atual é perdido.
-*   **Impacto:** Frustração do usuário por perda de dados (mesmo que pequena).
-*   **Solução Recomendada:**
-    *   Implementar persistência temporária no **IndexedDB** (via `dexie` ou `localforage`) como um "draft" local.
-    *   Sincronizar o draft com o Supabase em background.
-
----
 
 ## Próximos Passos (Prioridades):
 
-1.  **Imediato:** Implementar Full Text Search para melhorar a performance da busca global.
-2.  **Curto Prazo:** Migrar o armazenamento do editor para JSON para eliminar o parsing manual de strings.
-3.  **Médio Prazo:** Implementar camada de Offline/Draft local.
+1.  **Curto Prazo:** Migrar o armazenamento do editor para JSON para eliminar o parsing manual de strings.

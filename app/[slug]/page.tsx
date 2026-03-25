@@ -31,6 +31,7 @@ import { useLayout } from '@/context/LayoutContext';
 import { useFavorite } from '@/context/FavoriteContext';
 import { useNoteActions, useNoteTitle } from '@/context/NoteContext';
 import { createNoteSlug, extractIdFromSlug } from '@/lib/utils';
+import { clearNoteDraft, getNoteDraft, upsertNoteDraft } from '@/lib/offline/draftStore';
 
 export default function NotePage() {
   const t = useTranslations('NotePage');
@@ -70,6 +71,12 @@ export default function NotePage() {
 
   const saveDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedRef = useRef({ title: '', description: '<p></p>' });
+  const latestDraftRef = useRef({
+    userId: '',
+    noteId: '',
+    title: '',
+    description: '<p></p>',
+  });
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   const noteEditorRef = useRef<NoteEditorHandle>(null);
@@ -85,6 +92,15 @@ export default function NotePage() {
   }, []);
 
   const descriptionText = useMemo(() => htmlToPlainText(editorHtml), [editorHtml, htmlToPlainText]);
+
+  useEffect(() => {
+    latestDraftRef.current = {
+      userId: session?.user?.id ?? '',
+      noteId: note?.id ?? '',
+      title,
+      description: editorHtml,
+    };
+  }, [session, note, title, editorHtml]);
 
   useEffect(() => {
     const textarea = titleInputRef.current;
@@ -134,6 +150,20 @@ export default function NotePage() {
           rawTitle.trim() !== '' &&
           htmlToPlainText(nextHtml).trim() !== '';
         updateNoteHasContent(noteData.id, hasInitialContent);
+
+        // Draft local (IndexedDB) para não perder progresso se a conexão falhar/aba fechar.
+        // Se existir e for diferente do que veio do servidor, sobrepõe o estado atual na UI.
+        const userId = session.user.id;
+        const draft = await getNoteDraft(userId, noteData.id);
+        if (draft && (draft.title !== rawTitle || draft.description !== nextHtml)) {
+          setTitle(draft.title);
+          setEditorHtml(draft.description);
+          updateNoteTitle(noteData.id, draft.title);
+          const hasDraftContent =
+            draft.title.trim() !== '' &&
+            htmlToPlainText(draft.description).trim() !== '';
+          updateNoteHasContent(noteData.id, hasDraftContent);
+        }
 
         const parentId = noteData.parentId || noteData.parent_id;
         if (parentId) {
@@ -191,6 +221,10 @@ export default function NotePage() {
 
     saveDebounceRef.current = setTimeout(async () => {
       try {
+        const userId = session.user.id;
+        // Sempre persiste um "draft" local do estado atual (mesmo antes do request).
+        await upsertNoteDraft(userId, note.id, nextSnapshot.title, nextSnapshot.description);
+
         const payload: { title?: string; description?: string } = {};
         if (titleChanged) payload.title = nextSnapshot.title;
         if (descriptionChanged) payload.description = nextSnapshot.description;
@@ -201,6 +235,9 @@ export default function NotePage() {
           { headers: { Authorization: `Bearer ${session.accessToken}` } }
         );
         lastSavedRef.current = nextSnapshot;
+
+        // Sucesso: limpa o draft local.
+        await clearNoteDraft(userId, note.id);
       } catch (saveError) {
         console.error('Failed to save note', saveError);
       }
@@ -214,6 +251,28 @@ export default function NotePage() {
   useEffect(() => {
     return () => {
       if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    };
+  }, []);
+
+  // Best-effort flush: tenta gravar um draft antes de fechar/ocultar a aba.
+  // (IndexedDB é async; no `beforeunload` não dá pra garantir 100%, mas ajuda bastante.)
+  useEffect(() => {
+    const flushDraft = () => {
+      const { userId, noteId, title: nextTitle, description: nextDescription } = latestDraftRef.current;
+      if (!userId || !noteId) return;
+      void upsertNoteDraft(userId, noteId, nextTitle, nextDescription).catch(() => {});
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flushDraft();
+    };
+
+    window.addEventListener('beforeunload', flushDraft);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', flushDraft);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, []);
 
