@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Code, Link2, MessageSquareText, MoreHorizontal, SmilePlus, Underline } from 'lucide-react'
+import { Code, Copy, Link2, MessageSquareText, MoreHorizontal, Pencil, SmilePlus, Underline } from 'lucide-react'
 
 import { SlashMenu } from './SlashMenu'
 import SquareRootSmallIcon from './ui/SquareRootSmallIcon'
@@ -15,23 +15,39 @@ type Position = {
   left: number
 }
 
-type FloatingToolbarProps = {
-  userName?: string
-  updatedAt?: string
+type HoveredLink = {
+  el: HTMLAnchorElement
+  href: string
 }
 
-export default function FloatingToolbar({ userName, updatedAt }: FloatingToolbarProps) {
-  const [visible, setVisible] = useState(false)
-  const [position, setPosition] = useState<Position>({ top: 0, left: 0 })
-  const [activeStates, setActiveStates] = useState<Record<string, boolean>>({})
-  const [showColorModal, setShowColorModal] = useState(false)
-  const [showSlashMenu, setShowSlashMenu] = useState(false)
-	const [showLinkModal, setShowLinkModal] = useState(false)
-	const [showActionModal, setShowActionModal] = useState(false)
-	const [slashMenuPosition, setSlashMenuPosition] = useState<Position | null>(null)
-	const [colorModalPosition, setColorModalPosition] = useState<Position | null>(null)
-	const [actionModalPosition, setActionModalPosition] = useState<Position | null>(null)
-	const [savedSelection, setSavedSelection] = useState<Range | null>(null)
+const isCognitionTextLink = (link: HTMLAnchorElement) => link.getAttribute('data-cognition-link') === 'true'
+
+	type FloatingToolbarProps = {
+	  userName?: string
+	  updatedAt?: string
+	}
+
+	export default function FloatingToolbar({ userName, updatedAt }: FloatingToolbarProps) {
+	  const [visible, setVisible] = useState(false)
+	  const [position, setPosition] = useState<Position>({ top: 0, left: 0 })
+	  const [activeStates, setActiveStates] = useState<Record<string, boolean>>({})
+	  const [showColorModal, setShowColorModal] = useState(false)
+	  const [showSlashMenu, setShowSlashMenu] = useState(false)
+		const [showLinkModal, setShowLinkModal] = useState(false)
+		const [linkModalAnchor, setLinkModalAnchor] = useState<{ top: number; left: number; height: number } | null>(null)
+		const [linkModalInitialUrl, setLinkModalInitialUrl] = useState<string | undefined>(undefined)
+		const [editingLinkEl, setEditingLinkEl] = useState<HTMLAnchorElement | null>(null)
+		const [showActionModal, setShowActionModal] = useState(false)
+		const [slashMenuPosition, setSlashMenuPosition] = useState<Position | null>(null)
+		const [colorModalPosition, setColorModalPosition] = useState<Position | null>(null)
+		const [actionModalPosition, setActionModalPosition] = useState<Position | null>(null)
+		const [savedSelection, setSavedSelection] = useState<Range | null>(null)
+		const [hoveredLink, setHoveredLink] = useState<HoveredLink | null>(null)
+		const [hoverCardPosition, setHoverCardPosition] = useState<Position | null>(null)
+		const [linkCopied, setLinkCopied] = useState(false)
+		const hideHoverCardTimeoutRef = useRef<number | null>(null)
+		const hoveredLinkRef = useRef<HoveredLink | null>(null)
+		const hoverCardActiveRef = useRef(false)
 	const toolbarRef = useRef<HTMLDivElement>(null)
   const lastSelectionRectRef = useRef<DOMRect | null>(null)
 
@@ -101,6 +117,38 @@ export default function FloatingToolbar({ userName, updatedAt }: FloatingToolbar
     })
   }
 
+	const getClosestLinkFromSelection = (): HTMLAnchorElement | null => {
+		const selection = window.getSelection()
+		if (!selection || selection.rangeCount === 0) return null
+		const anchorNode = selection.anchorNode
+		const focusNode = selection.focusNode
+
+		const anchorEl = anchorNode instanceof Element ? anchorNode : anchorNode?.parentElement
+		const focusEl = focusNode instanceof Element ? focusNode : focusNode?.parentElement
+		if (!anchorEl || !focusEl) return null
+
+		const a1 = anchorEl.closest('a[href]') as HTMLAnchorElement | null
+		const a2 = focusEl.closest('a[href]') as HTMLAnchorElement | null
+		if (!a1 || !a2) return null
+		if (!isCognitionTextLink(a1) || !isCognitionTextLink(a2)) return null
+		if (a1 !== a2) return null
+		if (!a1.closest('.note-editor-content')) return null
+		return a1
+	}
+
+	const selectLinkElement = (link: HTMLAnchorElement) => {
+		try {
+			const range = document.createRange()
+			range.selectNodeContents(link)
+			const selection = window.getSelection()
+			if (!selection) return
+			selection.removeAllRanges()
+			selection.addRange(range)
+		} catch {
+			// ignore
+		}
+	}
+
   useEffect(() => {
     const handleSelection = () => {
       const selection = window.getSelection()
@@ -157,6 +205,89 @@ export default function FloatingToolbar({ userName, updatedAt }: FloatingToolbar
     }
   }, [showColorModal, showSlashMenu, showLinkModal, showActionModal])
 
+	useEffect(() => {
+		const clearHideTimeout = () => {
+			if (hideHoverCardTimeoutRef.current) {
+				window.clearTimeout(hideHoverCardTimeoutRef.current)
+				hideHoverCardTimeoutRef.current = null
+			}
+		}
+
+		const scheduleHide = () => {
+			clearHideTimeout()
+			hideHoverCardTimeoutRef.current = window.setTimeout(() => {
+				if (hoverCardActiveRef.current) return
+				hoveredLinkRef.current = null
+				setHoveredLink(null)
+				setHoverCardPosition(null)
+				setLinkCopied(false)
+			}, 120)
+		}
+
+		const handleMouseOver = (event: MouseEvent) => {
+			const target = event.target as HTMLElement | null
+			const link = (target?.closest('a[href]') as HTMLAnchorElement | null) ?? null
+			if (!link) return
+			if (!link.closest('.note-editor-content')) return
+			if (!isCognitionTextLink(link)) return
+
+			const href = link.getAttribute('href')?.trim() || ''
+			if (!href) return
+
+			clearHideTimeout()
+			const next: HoveredLink = { el: link, href }
+			hoveredLinkRef.current = next
+			setHoveredLink(next)
+		}
+
+		const handleMouseOut = (event: MouseEvent) => {
+			const target = event.target as HTMLElement | null
+			const link = (target?.closest('a[href]') as HTMLAnchorElement | null) ?? null
+			if (!link) return
+			if (hoveredLinkRef.current?.el !== link) return
+			scheduleHide()
+		}
+
+		document.addEventListener('mouseover', handleMouseOver)
+		document.addEventListener('mouseout', handleMouseOut)
+		return () => {
+			clearHideTimeout()
+			document.removeEventListener('mouseover', handleMouseOver)
+			document.removeEventListener('mouseout', handleMouseOut)
+		}
+	}, [])
+
+	useEffect(() => {
+		if (!hoveredLink) return
+
+		const cardWidth = 360
+		const padding = 8
+
+		const update = () => {
+			if (!document.contains(hoveredLink.el)) {
+				hoveredLinkRef.current = null
+				setHoveredLink(null)
+				setHoverCardPosition(null)
+				return
+			}
+
+			const rect = hoveredLink.el.getBoundingClientRect()
+			const left = Math.min(Math.max(rect.left, padding), window.innerWidth - cardWidth - padding)
+			const top = Math.min(rect.bottom + 6, window.innerHeight - 48 - padding)
+
+			const next = { top, left }
+			setHoverCardPosition((prev) => (prev && prev.top === next.top && prev.left === next.left ? prev : next))
+		}
+
+		update()
+		window.addEventListener('scroll', update, true)
+		window.addEventListener('resize', update)
+		return () => {
+			window.removeEventListener('scroll', update, true)
+			window.removeEventListener('resize', update)
+		}
+	}, [hoveredLink])
+
   useLayoutEffect(() => {
     if (!visible) return
     const selectionRect = lastSelectionRectRef.current
@@ -197,7 +328,8 @@ export default function FloatingToolbar({ userName, updatedAt }: FloatingToolbar
     setSavedSelection(null)
   }
 
-  if (!visible) return null
+	const hasAnyOverlay = showLinkModal || showColorModal || showSlashMenu || showActionModal || !!hoveredLink
+  if (!visible && !hasAnyOverlay) return null
 
 	if (showActionModal) {
 	    return (
@@ -224,15 +356,16 @@ export default function FloatingToolbar({ userName, updatedAt }: FloatingToolbar
 
   return (
     <>
-      <div
-        ref={toolbarRef}
-        style={{
-          top: position.top,
-          left: position.left,
-          transform: 'translateX(-50%)',
-        }}
-        className="fixed z-50 floating-toolbar-root w-[200px] max-h-[70vh] overflow-y-auto rounded-xl border border-[#2f2f2f] bg-[#1f1f1f] p-2 shadow-2xl text-sm text-[#d4d4d4]"
-      >
+			{visible && (
+				<div
+					ref={toolbarRef}
+					style={{
+						top: position.top,
+						left: position.left,
+						transform: 'translateX(-50%)',
+					}}
+					className="fixed z-50 floating-toolbar-root w-[200px] max-h-[70vh] overflow-y-auto rounded-xl border border-[#2f2f2f] bg-[#1f1f1f] p-2 shadow-2xl text-sm text-[#d4d4d4]"
+				>
       <div className="flex items-center gap-1 pb-2 border-b border-[#2a2a2a]">
         <button
           onMouseDown={(e) => {
@@ -288,17 +421,53 @@ export default function FloatingToolbar({ userName, updatedAt }: FloatingToolbar
       </div>
 
       <div className="flex items-center gap-1 py-2 border-b border-[#2a2a2a]">
-        <button
-          onMouseDown={(e) => {
-            e.preventDefault()
-            saveCurrentSelection()
-            setShowLinkModal((prev) => !prev)
-          }}
-          className={`p-1.5 rounded-md transition-colors ${showLinkModal ? 'bg-[#2383e21a] text-[#2383e2]' : 'hover:bg-[#2a2a2a]'}`}
-          aria-label="Link"
-        >
-          <Link2 size={15} />
-        </button>
+	        <button
+	          onMouseDown={(e) => {
+	            e.preventDefault()
+
+							const existingLink = getClosestLinkFromSelection()
+							if (existingLink) {
+								saveCurrentSelection()
+								const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+								const padding = 8
+								const modalWidth = 320
+								let left = rect.left
+								if (left + modalWidth > window.innerWidth - padding) left = window.innerWidth - modalWidth - padding
+								if (left < padding) left = padding
+
+								setEditingLinkEl(existingLink)
+								setLinkModalInitialUrl(existingLink.getAttribute('href') || existingLink.href)
+								setLinkModalAnchor({ top: rect.top, left, height: rect.height })
+								setShowLinkModal(true)
+								return
+							}
+
+	            saveCurrentSelection()
+							if (showLinkModal) {
+								setShowLinkModal(false)
+								setLinkModalAnchor(null)
+								setLinkModalInitialUrl(undefined)
+								setEditingLinkEl(null)
+								return
+							}
+
+	            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+							const padding = 8
+							const modalWidth = 320
+							let left = rect.left
+							if (left + modalWidth > window.innerWidth - padding) left = window.innerWidth - modalWidth - padding
+							if (left < padding) left = padding
+
+							setLinkModalAnchor({ top: rect.top, left, height: rect.height })
+							setLinkModalInitialUrl(undefined)
+							setEditingLinkEl(null)
+	            setShowLinkModal(true)
+	          }}
+	          className={`p-1.5 rounded-md transition-colors ${showLinkModal ? 'bg-[#2383e21a] text-[#2383e2]' : 'hover:bg-[#2a2a2a]'}`}
+	          aria-label="Link"
+	        >
+	          <Link2 size={15} />
+	        </button>
         <button
           onMouseDown={(e) => {
             e.preventDefault()
@@ -361,37 +530,125 @@ export default function FloatingToolbar({ userName, updatedAt }: FloatingToolbar
         </button>
       </div>
 
-      <div className="pt-2">
-        <AiOption label="Melhoria escrita" />
-        <AiOption label="Revisao" />
-        <AiOption label="Explicar" />
-        <AiOption label="Reformatar" />
-        <AiOption label="Gerenciar habilidades" />
-      </div>
+	      <div className="pt-2">
+	        <AiOption label="Melhoria escrita" />
+	        <AiOption label="Revisao" />
+	        <AiOption label="Explicar" />
+	        <AiOption label="Reformatar" />
+	        <AiOption label="Gerenciar habilidades" />
+	      </div>
 
-      {showLinkModal && (
-        <LinkModal
-          onApplyLink={(url) => {
-            restoreSavedSelection()
-            document.execCommand('createLink', false, url)
-            setShowLinkModal(false)
-            setSavedSelection(null)
-            updateActiveStates()
-          }}
-          onClose={() => {
-            setShowLinkModal(false)
-            setSavedSelection(null)
-          }}
-        />
-      )}
+	      </div>
+			)}
 
-      </div>
+			{hoveredLink && hoverCardPosition && !showLinkModal && (
+				<div
+					className="fixed z-[70] pointer-events-auto"
+					style={{ top: hoverCardPosition.top, left: hoverCardPosition.left, width: 360 }}
+					onMouseEnter={() => {
+						hoverCardActiveRef.current = true
+					}}
+					onMouseLeave={() => {
+						hoverCardActiveRef.current = false
+						hoveredLinkRef.current = null
+						setHoveredLink(null)
+						setHoverCardPosition(null)
+						setLinkCopied(false)
+					}}
+				>
+					<div className="flex items-center gap-2 rounded-lg border border-[#3a3a3a] bg-[#252525] px-2 py-1.5 shadow-2xl">
+						<Link2 size={14} className="text-gray-400 shrink-0" />
+						<span className="min-w-0 flex-1 truncate text-xs text-[#d4d4d4]">{hoveredLink.href}</span>
+						<button
+							onMouseDown={(e) => e.preventDefault()}
+							onClick={async () => {
+								try {
+									await navigator.clipboard.writeText(hoveredLink.href)
+									setLinkCopied(true)
+									window.setTimeout(() => setLinkCopied(false), 900)
+								} catch {
+									const textarea = document.createElement('textarea')
+									textarea.value = hoveredLink.href
+									textarea.style.position = 'fixed'
+									textarea.style.left = '-9999px'
+									document.body.appendChild(textarea)
+									textarea.select()
+									document.execCommand('copy')
+									document.body.removeChild(textarea)
+									setLinkCopied(true)
+									window.setTimeout(() => setLinkCopied(false), 900)
+								}
+							}}
+							className="rounded-md p-1 hover:bg-[#2f2f2f] transition-colors"
+							aria-label="Copiar link"
+							title={linkCopied ? 'Copiado!' : 'Copiar'}
+						>
+							<Copy size={14} className={linkCopied ? 'text-[#2383e2]' : 'text-gray-300'} />
+						</button>
+						<button
+							onMouseDown={(e) => e.preventDefault()}
+							onClick={() => {
+								const rect = hoveredLink.el.getBoundingClientRect()
+								const padding = 8
+								const modalWidth = 320
+								let left = rect.left
+								if (left + modalWidth > window.innerWidth - padding) left = window.innerWidth - modalWidth - padding
+								if (left < padding) left = padding
 
-      {showColorModal && colorModalPosition && (
-        <ColorModal
-          position={colorModalPosition}
-          onClose={() => setShowColorModal(false)}
-          onApplyColor={(type, color) => {
+								selectLinkElement(hoveredLink.el)
+								saveCurrentSelection()
+								setEditingLinkEl(hoveredLink.el)
+								setLinkModalInitialUrl(hoveredLink.href)
+								setLinkModalAnchor({ top: rect.top, left, height: rect.height })
+								setShowLinkModal(true)
+							}}
+							className="rounded-md p-1 hover:bg-[#2f2f2f] transition-colors"
+							aria-label="Editar link"
+							title="Editar link"
+						>
+							<Pencil size={14} className="text-gray-300" />
+						</button>
+					</div>
+				</div>
+			)}
+
+				{showLinkModal && linkModalAnchor && (
+					<div className="fixed inset-0 z-[60] pointer-events-none">
+						<div
+							className="absolute pointer-events-auto"
+							style={{ top: linkModalAnchor.top, left: linkModalAnchor.left, height: linkModalAnchor.height }}
+						>
+							<div className="relative" style={{ height: linkModalAnchor.height }}>
+								<LinkModal
+									initialUrl={linkModalInitialUrl}
+									onApplyLink={(url) => {
+										restoreSavedSelection()
+										document.dispatchEvent(new CustomEvent('floatingToolbarLink', { detail: { href: url } }))
+										setShowLinkModal(false)
+										setLinkModalAnchor(null)
+										setLinkModalInitialUrl(undefined)
+										setEditingLinkEl(null)
+										setSavedSelection(null)
+										updateActiveStates()
+									}}
+									onClose={() => {
+										setShowLinkModal(false)
+										setLinkModalAnchor(null)
+										setLinkModalInitialUrl(undefined)
+										setEditingLinkEl(null)
+										setSavedSelection(null)
+									}}
+								/>
+							</div>
+						</div>
+					</div>
+				)}
+
+	      {showColorModal && colorModalPosition && (
+	        <ColorModal
+	          position={colorModalPosition}
+	          onClose={() => setShowColorModal(false)}
+	          onApplyColor={(type, color) => {
             restoreSavedSelection()
             document.dispatchEvent(new CustomEvent('floatingToolbarColor', {
               detail: { action: 'apply', type, color },

@@ -523,7 +523,7 @@ export function SortableBlock({ id, type, content, childTitles = {}, onChange, o
         <div className="flex-1 ml-10">
           <Link
             href={`/${pageId}`}
-            className="flex items-center gap-2 w-full p-1 hover:bg-[#2f2f2f] rounded transition-colors group/link"
+            className="flex items-center gap-2 w-full p-1 hover:bg-[#2f2f2f] rounded transition-colors group/link no-underline text-white"
           >
             <FileText size={20} className="text-[#9b9b9b] group-hover/link:text-white shrink-0" />
             <span className="text-base text-white font-medium truncate underline-offset-4 group-hover/link:underline">

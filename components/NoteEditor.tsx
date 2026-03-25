@@ -47,6 +47,10 @@ type FloatingToolbarColorEventDetail = {
     color?: string;
 };
 
+type FloatingToolbarLinkEventDetail = {
+    href: string;
+};
+
 const URL_REGEX = /^(https?:\/\/[^\s]+)$/i;
 const IMAGE_URL_REGEX = /https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|svg)(\?[^\s]*)?/i;
 const VIDEO_URL_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com)\/.+$/i;
@@ -200,6 +204,7 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
                     protocols: ['http', 'https'],
                     HTMLAttributes: {
                         class: 'text-[#2383e2] underline underline-offset-2 cursor-pointer',
+                        'data-cognition-link': 'true',
                     },
                 }),
                 Placeholder.configure({
@@ -472,6 +477,24 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
             document.addEventListener('floatingToolbarColor', handleFloatingToolbarColor as EventListener);
             return () => {
                 document.removeEventListener('floatingToolbarColor', handleFloatingToolbarColor as EventListener);
+            };
+        }, [editor]);
+
+        useEffect(() => {
+            if (!editor) return;
+
+            const handleFloatingToolbarLink = (event: Event) => {
+                const customEvent = event as CustomEvent<FloatingToolbarLinkEventDetail>;
+                const detail = customEvent.detail;
+                const href = detail?.href?.trim();
+                if (!href) return;
+
+                editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+            };
+
+            document.addEventListener('floatingToolbarLink', handleFloatingToolbarLink as EventListener);
+            return () => {
+                document.removeEventListener('floatingToolbarLink', handleFloatingToolbarLink as EventListener);
             };
         }, [editor]);
 

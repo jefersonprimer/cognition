@@ -242,17 +242,6 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* Option 3: Saiba mais... */}
-                <button
-                  className="mx-1 flex w-full items-center gap-2 rounded px-3 py-1.5 text-left hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-[#3f3f3f] dark:hover:text-white"
-                  style={{ width: 'calc(100% - 8px)' }}
-                  onClick={() => router.push('/help/home-and-my-tasks')}
-                >
-                  <span className="flex items-center gap-2">
-                    <HelpCircle size={16} />
-                    {t('menu.learnMore')}
-                  </span>
-                </button>
               </div>
             )}
           </div>

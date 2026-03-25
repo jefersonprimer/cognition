@@ -3,7 +3,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FileText } from 'lucide-react';
 import { useNote } from '@/context/NoteContext';
 import api from '@/lib/api';
@@ -14,6 +14,7 @@ function PageLinkView({ node }: NodeViewProps) {
     const pageId = String(node.attrs.pageId || '');
     const attrTitle = String(node.attrs.title || '');
     const { updatedTitles } = useNote();
+    const router = useRouter();
     const [fetchedTitle, setFetchedTitle] = useState<string>('');
     const [loading, setLoading] = useState(true);
 
@@ -48,15 +49,47 @@ function PageLinkView({ node }: NodeViewProps) {
 
     return (
         <NodeViewWrapper contentEditable={false} data-type="pageLink">
-            <Link
+            <a
                 href={`/${pageId}`}
                 className="flex items-center gap-2 w-full p-1.5 my-1 hover:bg-[#2f2f2f] rounded transition-colors group/link no-underline"
+                onMouseDownCapture={(event) => {
+                    // Prevent ProseMirror/Tiptap link handlers from also reacting to this click.
+                    if (!pageId) return;
+                    if (
+                        event.defaultPrevented ||
+                        event.button !== 0 ||
+                        event.metaKey ||
+                        event.ctrlKey ||
+                        event.shiftKey ||
+                        event.altKey
+                    ) {
+                        return;
+                    }
+                    event.preventDefault();
+                    event.stopPropagation();
+                }}
+                onClick={(event) => {
+                    if (!pageId) return;
+                    if (
+                        event.defaultPrevented ||
+                        event.button !== 0 ||
+                        event.metaKey ||
+                        event.ctrlKey ||
+                        event.shiftKey ||
+                        event.altKey
+                    ) {
+                        return;
+                    }
+                    event.preventDefault();
+                    event.stopPropagation();
+                    router.push(`/${pageId}`);
+                }}
             >
                 <FileText size={20} className="text-[#9b9b9b] group-hover/link:text-white shrink-0" />
                 <span className="text-base text-white font-medium truncate underline-offset-4 group-hover/link:underline">
                     {displayTitle}
                 </span>
-            </Link>
+            </a>
         </NodeViewWrapper>
     );
 }

@@ -11,9 +11,10 @@ import { useNote } from '@/context/NoteContext'
 type Props = {
     onApplyLink: (url: string) => void
     onClose: () => void
+    initialUrl?: string
 }
 
-export default function LinkModal({ onApplyLink, onClose }: Props) {
+export default function LinkModal({ onApplyLink, onClose, initialUrl }: Props) {
     const t = useTranslations('LinkModal')
     const { updatedTitles, updatedHasContent } = useNote()
     const [url, setUrl] = useState('')
@@ -24,6 +25,10 @@ export default function LinkModal({ onApplyLink, onClose }: Props) {
     const inputRef = useRef<HTMLInputElement>(null)
     const [flipAbove, setFlipAbove] = useState(false)
     const defaultNoteTitle = 'Nova página'
+
+    useEffect(() => {
+        if (initialUrl) setUrl(initialUrl)
+    }, [initialUrl])
 
     // Focus input on mount
     useEffect(() => {

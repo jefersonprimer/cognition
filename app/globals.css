@@ -366,6 +366,16 @@ button {
   color: #4ba3f5;
 }
 
+/* PageLink (referência de nota filha dentro da descrição) */
+.ProseMirror [data-type="pageLink"] a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ProseMirror [data-type="pageLink"] a:hover {
+  color: inherit;
+}
+
 /* ── Mark: Bold / Italic / Strike ────────────────────────────────────────── */
 
 .ProseMirror strong {
