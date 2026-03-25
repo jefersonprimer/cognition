@@ -499,7 +499,22 @@ const getClosestCodeFromNode = (node: Node | null): HTMLElement | null => {
         >
           <Code size={15} />
         </button>
-        <button className="px-2 py-1 rounded-md hover:bg-[#2a2a2a] transition-colors flex items-center gap-1">
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault()
+            const latex = window.getSelection()?.toString().trim()
+            if (!latex) return
+
+            document.dispatchEvent(
+              new CustomEvent('floatingToolbarEquation', {
+                detail: { latex },
+              })
+            )
+            setVisible(false)
+          }}
+          className="px-2 py-1 rounded-md hover:bg-[#2a2a2a] transition-colors flex items-center gap-1"
+          aria-label="Equação"
+        >
           <SquareRootSmallIcon size={14} />
         </button>
 	        <button

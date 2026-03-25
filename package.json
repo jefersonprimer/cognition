@@ -27,6 +27,7 @@
     "bcryptjs": "^3.0.3",
     "framer-motion": "^12.34.0",
     "jsonwebtoken": "^9.0.3",
+    "katex": "^0.16.42",
     "lowlight": "^2.9.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.3",

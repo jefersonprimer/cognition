@@ -19,6 +19,7 @@ import VideoEmbed from './extensions/VideoEmbed';
 import ResizableImage from './extensions/ResizableImage';
 import TextColor from './extensions/TextColor';
 import TextBackground from './extensions/TextBackground';
+import Equation from './extensions/Equation';
 import UrlPasteModal from './UrlPasteModal';
 
 
@@ -49,6 +50,10 @@ type FloatingToolbarColorEventDetail = {
 
 type FloatingToolbarLinkEventDetail = {
     href: string;
+};
+
+type FloatingToolbarEquationEventDetail = {
+    latex: string;
 };
 
 const URL_REGEX = /^(https?:\/\/[^\s]+)$/i;
@@ -224,6 +229,7 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
                 Underline,
                 TextColor,
                 TextBackground,
+                Equation,
                 CodeBlockLowlight.configure({
                     lowlight,
                     HTMLAttributes: {
@@ -508,6 +514,34 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
             document.addEventListener('floatingToolbarLink', handleFloatingToolbarLink as EventListener);
             return () => {
                 document.removeEventListener('floatingToolbarLink', handleFloatingToolbarLink as EventListener);
+            };
+        }, [editor]);
+
+        useEffect(() => {
+            if (!editor) return;
+
+            const handleFloatingToolbarEquation = (event: Event) => {
+                const customEvent = event as CustomEvent<FloatingToolbarEquationEventDetail>;
+                const latex = customEvent.detail?.latex?.trim();
+                if (!latex) return;
+
+                const { from, to } = editor.state.selection;
+                editor
+                    .chain()
+                    .focus()
+                    .insertContentAt(
+                        { from, to },
+                        {
+                            type: 'equation',
+                            attrs: { latex },
+                        }
+                    )
+                    .run();
+            };
+
+            document.addEventListener('floatingToolbarEquation', handleFloatingToolbarEquation as EventListener);
+            return () => {
+                document.removeEventListener('floatingToolbarEquation', handleFloatingToolbarEquation as EventListener);
             };
         }, [editor]);
 
