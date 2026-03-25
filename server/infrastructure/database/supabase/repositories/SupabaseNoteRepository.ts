@@ -345,68 +345,12 @@ export class SupabaseNoteRepository implements INoteRepository {
   }
 
   async emptyTrash(userId: string): Promise<void> {
-    const { data: deletedNotes, error: deletedNotesError } = await supabase
-      .from('notes')
-      .select('id, parent_id')
-      .eq('user_id', userId)
-      .eq('is_deleted', true);
-
-    if (deletedNotesError) {
-      console.error("Supabase find deleted notes for cleanup error:", deletedNotesError.message);
-      throw new Error("Could not empty trash.");
-    }
-
-    const childIdsByParent = new Map<string, string[]>();
-    for (const note of deletedNotes ?? []) {
-      if (!note.parent_id) continue;
-      const existing = childIdsByParent.get(note.parent_id) ?? [];
-      existing.push(note.id);
-      childIdsByParent.set(note.parent_id, existing);
-    }
-
-    if (childIdsByParent.size > 0) {
-      const parentIds = Array.from(childIdsByParent.keys());
-      const { data: parentNotes, error: parentNotesError } = await supabase
-        .from('notes')
-        .select('id, description')
-        .eq('user_id', userId)
-        .in('id', parentIds);
-
-      if (parentNotesError) {
-        console.error("Supabase find parent notes for trash cleanup error:", parentNotesError.message);
-        throw new Error("Could not empty trash.");
-      }
-
-      for (const parent of parentNotes ?? []) {
-        const childIds = childIdsByParent.get(parent.id) ?? [];
-        const nextDescription = this.stripChildReferencesFromDescription(parent.description, childIds);
-        if (nextDescription === parent.description) {
-          continue;
-        }
-
-        const { error: updateParentError } = await supabase
-          .from('notes')
-          .update({
-            description: nextDescription,
-            updated_at: new Date().toISOString(),
-          })
-          .match({ id: parent.id, user_id: userId });
-
-        if (updateParentError) {
-          console.error("Supabase update parent during empty trash error:", updateParentError.message);
-          throw new Error("Could not empty trash.");
-        }
-      }
-    }
-
-    const { error } = await supabase
-      .from('notes')
-      .delete()
-      .eq('user_id', userId)
-      .eq('is_deleted', true);
+    const { error } = await supabase.rpc('empty_trash_and_cleanup_references', {
+      p_user_id: userId,
+    });
 
     if (error) {
-      console.error("Supabase empty trash error:", error.message);
+      console.error("Supabase empty trash RPC error:", error.message);
       throw new Error("Could not empty trash.");
     }
   }

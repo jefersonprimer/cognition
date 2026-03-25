@@ -28,3 +28,67 @@ CREATE TABLE public.users (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
+
+CREATE OR REPLACE FUNCTION public.empty_trash_and_cleanup_references(p_user_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  WITH deleted_notes AS (
+    SELECT id, parent_id
+    FROM public.notes
+    WHERE user_id = p_user_id
+      AND is_deleted = true
+      AND parent_id IS NOT NULL
+  ),
+  parent_updates AS (
+    SELECT
+      parent.id,
+      CASE
+        WHEN parent.description IS NULL THEN NULL
+        ELSE COALESCE(
+          string_agg(line_data.line, E'\n' ORDER BY line_data.ordinality) FILTER (
+            WHERE NOT (
+              line_data.trimmed_line LIKE 'p:%'
+              AND EXISTS (
+                SELECT 1
+                FROM deleted_notes dn
+                WHERE dn.parent_id = parent.id
+                  AND replace(lower(split_part(trim(substr(line_data.trimmed_line, 3)), '|', 1)), '-', '') =
+                    replace(lower(dn.id::text), '-', '')
+              )
+            )
+          ),
+          ''
+        )
+      END AS next_description
+    FROM public.notes AS parent
+    JOIN (
+      SELECT DISTINCT parent_id
+      FROM deleted_notes
+    ) AS parents_to_update
+      ON parents_to_update.parent_id = parent.id
+    LEFT JOIN LATERAL (
+      SELECT
+        split_lines.line,
+        split_lines.ordinality,
+        btrim(split_lines.line) AS trimmed_line
+      FROM regexp_split_to_table(parent.description, E'\n') WITH ORDINALITY AS split_lines(line, ordinality)
+    ) AS line_data ON true
+    WHERE parent.user_id = p_user_id
+    GROUP BY parent.id, parent.description
+  )
+  UPDATE public.notes AS parent
+  SET
+    description = parent_updates.next_description,
+    updated_at = now()
+  FROM parent_updates
+  WHERE parent.id = parent_updates.id
+    AND parent.user_id = p_user_id
+    AND parent.description IS DISTINCT FROM parent_updates.next_description;
+
+  DELETE FROM public.notes
+  WHERE user_id = p_user_id
+    AND is_deleted = true;
+END;
+$$;

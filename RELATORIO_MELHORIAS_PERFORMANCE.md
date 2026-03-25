@@ -4,17 +4,7 @@ Este documento detalha os pontos críticos identificados na arquitetura atual do
 
 ---
 
-## 1. [ALTO] Operações de Banco de Dados em Lote (Escalabilidade)
-**Local:** `SupabaseNoteRepository.ts` (Método `emptyTrash` e `removeChildReference`)
-
-*   **Problema:** A lógica de "limpeza" de referências é processada no Node.js através de loops que disparam múltiplas queries individuais (N+1).
-*   **Impacto:** Operações de lixeira extremamente lentas para usuários com muitas notas, risco de timeout e inconsistência se uma das 20 requisições falhar no meio.
-*   **Solução Recomendada:**
-    *   Criar uma **Database Function (RPC)** no PostgreSQL para processar a remoção de referências e limpeza da lixeira em uma única transação atômica no servidor.
-
----
-
-## 2. [MÉDIO] Estrutura de Dados e Parsing de Texto
+## 1. [ALTO] Estrutura de Dados e Parsing de Texto
 **Local:** `SupabaseNoteRepository.ts` e `lib/editorSerializer.ts`
 
 *   **Problema:** O uso de strings mágicas (`p:id|name`) dentro do campo `description` exige processamento pesado de strings (`split`, `filter`, `join`) em cada leitura/escrita.
@@ -25,7 +15,7 @@ Este documento detalha os pontos críticos identificados na arquitetura atual do
 
 ---
 
-## 3. [BAIXO] Busca e Indexação (Scalabilidade de Dados)
+## 2. [MÉDIO] Busca e Indexação (Scalabilidade de Dados)
 **Local:** `SupabaseNoteRepository.ts` (Método `search`)
 
 *   **Problema:** O uso de `.ilike('%query%')` não escala. O PostgreSQL não consegue usar índices B-Tree para buscas que começam com caractere coringa (`%`).
@@ -36,7 +26,7 @@ Este documento detalha os pontos críticos identificados na arquitetura atual do
 
 ---
 
-## 4. [BAIXO] Segurança de Dados e Offline (Resiliência)
+## 3. [BAIXO] Segurança de Dados e Offline (Resiliência)
 **Local:** `NoteEditor.tsx`
 
 *   **Problema:** Se a conexão falhar ou o navegador fechar durante o debounce, o progresso entre o último save e a alteração atual é perdido.
@@ -49,6 +39,6 @@ Este documento detalha os pontos críticos identificados na arquitetura atual do
 
 ## Próximos Passos (Prioridades):
 
-1.  **Imediato:** Mover lógicas de limpeza (`emptyTrash`) para RPC (Postgres Functions) para evitar N+1.
-2.  **Curto Prazo:** Implementar Full Text Search para melhorar a performance da busca global.
-3.  **Médio Prazo:** Migrar o armazenamento do editor para JSON para eliminar o parsing manual de strings.
+1.  **Imediato:** Implementar Full Text Search para melhorar a performance da busca global.
+2.  **Curto Prazo:** Migrar o armazenamento do editor para JSON para eliminar o parsing manual de strings.
+3.  **Médio Prazo:** Implementar camada de Offline/Draft local.
