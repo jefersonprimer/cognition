@@ -7,6 +7,12 @@ CREATE TABLE public.notes (
   parent_id uuid,
   title text NOT NULL,
   description text,
+  -- Full Text Search: precomputed vector to make search fast via GIN.
+  -- A = title weight, B = description weight.
+  search_vector tsvector GENERATED ALWAYS AS (
+    setweight(to_tsvector('simple', coalesce(title, '')), 'A') ||
+    setweight(to_tsvector('simple', coalesce(description, '')), 'B')
+  ) STORED,
   is_favorite boolean NOT NULL DEFAULT false,
   is_deleted boolean NOT NULL DEFAULT false,
   deleted_at timestamp with time zone,
@@ -92,3 +98,8 @@ BEGIN
     AND is_deleted = true;
 END;
 $$;
+
+-- Index to speed up Full Text Search queries on `search_vector`.
+CREATE INDEX IF NOT EXISTS notes_search_vector_gin_idx
+  ON public.notes
+  USING GIN (search_vector);

@@ -304,32 +304,63 @@ export class SupabaseNoteRepository implements INoteRepository {
   }
 
   async search(userId: string, query: string, titleOnly?: boolean, sortBy?: 'created_at' | 'updated_at', sortDirection?: 'asc' | 'desc'): Promise<Note[]> {
-    let filter;
-    if (titleOnly) {
-      filter = `title.ilike.%${query}%`;
-    } else {
-      filter = `title.ilike.%${query}%,description.ilike.%${query}%`;
-    }
+    // Use Full Text Search instead of `ilike('%...%')` for scalability.
+    // When the DB has a precomputed `search_vector` (GIN indexed), it will be used.
+    // Otherwise we fallback to FTS over `title` + `description`.
+    const config = 'simple';
+    const type: 'websearch' = 'websearch';
+    const sanitizedQuery = query
+      .trim()
+      // Avoid breaking PostgREST filter parsing in the `.or(...)` fallback.
+      .replace(/[(),]/g, ' ');
 
-    let queryBuilder = supabase
+    const baseQuery = supabase
       .from('notes')
       .select('*')
       .eq('user_id', userId)
-      .eq('is_deleted', false)
-      .or(filter);
+      .eq('is_deleted', false);
 
-    if (sortBy) {
-      queryBuilder = queryBuilder.order(sortBy, { ascending: sortDirection === 'asc' });
+    const applySort = (q: typeof baseQuery) => {
+      if (!sortBy) return q;
+      return q.order(sortBy, { ascending: sortDirection === 'asc' });
+    };
+
+    // Title-only is the simplest case: just filter by `title` FTS.
+    if (titleOnly) {
+      const { data, error } = await applySort(
+        baseQuery.textSearch('title', sanitizedQuery, { config, type })
+      );
+
+      if (error) {
+        console.error("Supabase search notes error (titleOnly):", error.message);
+        throw new Error("Could not perform search.");
+      }
+
+      return (data ?? []).map(this.mapToNote);
     }
 
-    const { data, error } = await queryBuilder;
+    // Full search: prefer precomputed weighted `search_vector` (faster with GIN index).
+    const tryVector = await applySort(
+      baseQuery.textSearch('search_vector', sanitizedQuery, { config, type })
+    );
+    if (tryVector.error) {
+      // Fallback if the schema doesn't have `search_vector` yet.
+      const operator = `wfts(${config})`;
+      const filter = `title.${operator}.${sanitizedQuery},description.${operator}.${sanitizedQuery}`;
 
-    if (error) {
-      console.error("Supabase search notes error:", error.message);
-      throw new Error("Could not perform search.");
+      const { data, error } = await applySort(baseQuery.or(filter));
+      if (error) {
+        console.error("Supabase search notes error (fallback):", error.message);
+        throw new Error("Could not perform search.");
+      }
+
+      return (data ?? []).map(this.mapToNote);
     }
 
-    return data.map(this.mapToNote);
+    if (!tryVector.data) {
+      return [];
+    }
+    return tryVector.data.map(this.mapToNote);
   }
 
   async deleteAllByUserId(userId: string): Promise<void> {
