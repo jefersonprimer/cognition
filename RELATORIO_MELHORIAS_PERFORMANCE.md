@@ -1,21 +1,10 @@
 # Relatório de Melhorias e Performance - Cognition
 
-Este documento detalha os pontos críticos identificados na arquitetura atual do projeto e propõe um roteiro de melhorias ordenado por impacto (do mais grave ao menos grave).
+Este documento detalha os pontos críticos identificados na arquitetura atual do projeto e o roteiro de pendências ordenado por impacto.
 
 ---
 
-## 1. [ALTO] Eficiência de Comunicação e Salvamento (Custo/Performance)
-**Local:** `app/[slug]/page.tsx` e `SupabaseNoteRepository.ts`
-
-*   **Problema:** Debounces separados para título e conteúdo geram múltiplas requisições `PUT` desnecessárias. O backend sempre executa um `.update()` e sobrescreve `updated_at`, mesmo que o conteúdo enviado seja idêntico ao atual.
-*   **Impacto:** Dobro de carga no Supabase, consumo excessivo de cota de escrita e poluição do histórico de "última modificação".
-*   **Solução Recomendada:**
-    *   **Unified Debounce:** Criar um único pipeline de salvamento que agrupa título e descrição.
-    *   **Smart Diffing:** No repositório ou caso de uso, comparar os dados recebidos com os dados atuais. Se `title === current.title` e `description === current.description`, abortar a operação de escrita.
-
----
-
-## 2. [MÉDIO] Operações de Banco de Dados em Lote (Escalabilidade)
+## 1. [ALTO] Operações de Banco de Dados em Lote (Escalabilidade)
 **Local:** `SupabaseNoteRepository.ts` (Método `emptyTrash` e `removeChildReference`)
 
 *   **Problema:** A lógica de "limpeza" de referências é processada no Node.js através de loops que disparam múltiplas queries individuais (N+1).
@@ -25,7 +14,7 @@ Este documento detalha os pontos críticos identificados na arquitetura atual do
 
 ---
 
-## 3. [MÉDIO] Estrutura de Dados e Parsing de Texto
+## 2. [MÉDIO] Estrutura de Dados e Parsing de Texto
 **Local:** `SupabaseNoteRepository.ts` e `lib/editorSerializer.ts`
 
 *   **Problema:** O uso de strings mágicas (`p:id|name`) dentro do campo `description` exige processamento pesado de strings (`split`, `filter`, `join`) em cada leitura/escrita.
@@ -36,7 +25,7 @@ Este documento detalha os pontos críticos identificados na arquitetura atual do
 
 ---
 
-## 4. [BAIXO] Busca e Indexação (Escalabilidade de Dados)
+## 3. [BAIXO] Busca e Indexação (Scalabilidade de Dados)
 **Local:** `SupabaseNoteRepository.ts` (Método `search`)
 
 *   **Problema:** O uso de `.ilike('%query%')` não escala. O PostgreSQL não consegue usar índices B-Tree para buscas que começam com caractere coringa (`%`).
@@ -47,7 +36,7 @@ Este documento detalha os pontos críticos identificados na arquitetura atual do
 
 ---
 
-## 5. [BAIXO] Segurança de Dados e Offline (Resiliência)
+## 4. [BAIXO] Segurança de Dados e Offline (Resiliência)
 **Local:** `NoteEditor.tsx`
 
 *   **Problema:** Se a conexão falhar ou o navegador fechar durante o debounce, o progresso entre o último save e a alteração atual é perdido.
@@ -58,8 +47,8 @@ Este documento detalha os pontos críticos identificados na arquitetura atual do
 
 ---
 
-## Resumo de Prioridades para Implementação:
+## Próximos Passos (Prioridades):
 
-1.  **Semana 1:** Unificar Debounce e implementar Diff no Repositório.
-2.  **Semana 2:** Mover lógicas de limpeza para RPC (Postgres Functions).
-3.  **Semana 3:** Implementar Full Text Search e avaliar migração para JSON no Tiptap.
+1.  **Imediato:** Mover lógicas de limpeza (`emptyTrash`) para RPC (Postgres Functions) para evitar N+1.
+2.  **Curto Prazo:** Implementar Full Text Search para melhorar a performance da busca global.
+3.  **Médio Prazo:** Migrar o armazenamento do editor para JSON para eliminar o parsing manual de strings.

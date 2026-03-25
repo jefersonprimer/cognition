@@ -54,8 +54,6 @@ export default function NotePage() {
   const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareButtonPosition, setShareButtonPosition] = useState<{ top: number; left: number } | null>(null);
-  const [lastSavedTitle, setLastSavedTitle] = useState('');
-  const [lastSavedDescription, setLastSavedDescription] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileToolbarVisible, setIsMobileToolbarVisible] = useState(false);
   const [mobileToolbarPosition, setMobileToolbarPosition] = useState<{ top: number; left: number } | null>(null);
@@ -71,6 +69,7 @@ export default function NotePage() {
   }, []);
 
   const saveDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedRef = useRef({ title: '', description: '<p></p>' });
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   const noteEditorRef = useRef<NoteEditorHandle>(null);
@@ -125,8 +124,10 @@ export default function NotePage() {
         setNote(noteData);
         setTitle(rawTitle);
         setEditorHtml(nextHtml);
-        setLastSavedTitle(rawTitle);
-        setLastSavedDescription(rawDescription);
+        lastSavedRef.current = {
+          title: rawTitle,
+          description: nextHtml,
+        };
         updateNoteTitle(noteData.id, rawTitle);
 
         const hasInitialContent =
@@ -177,24 +178,29 @@ export default function NotePage() {
   useEffect(() => {
     if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
     if (!note || !session || loading) return;
-    const titleChanged = title !== lastSavedTitle;
-    const descriptionChanged = editorHtml !== lastSavedDescription;
+    const { title: savedTitle, description: savedDescription } = lastSavedRef.current;
+    const titleChanged = title !== savedTitle;
+    const descriptionChanged = editorHtml !== savedDescription;
 
     if (!titleChanged && !descriptionChanged) return;
+
+    const nextSnapshot = {
+      title,
+      description: editorHtml,
+    };
 
     saveDebounceRef.current = setTimeout(async () => {
       try {
         const payload: { title?: string; description?: string } = {};
-        if (titleChanged) payload.title = title;
-        if (descriptionChanged) payload.description = editorHtml;
+        if (titleChanged) payload.title = nextSnapshot.title;
+        if (descriptionChanged) payload.description = nextSnapshot.description;
 
         await api.put(
           `/notes/${note.id}`,
           payload,
           { headers: { Authorization: `Bearer ${session.accessToken}` } }
         );
-        if (titleChanged) setLastSavedTitle(title);
-        if (descriptionChanged) setLastSavedDescription(editorHtml);
+        lastSavedRef.current = nextSnapshot;
       } catch (saveError) {
         console.error('Failed to save note', saveError);
       }
@@ -203,7 +209,7 @@ export default function NotePage() {
     return () => {
       if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
     };
-  }, [title, editorHtml, note, session, loading, lastSavedTitle, lastSavedDescription]);
+  }, [title, editorHtml, note, session, loading]);
 
   useEffect(() => {
     return () => {

@@ -135,7 +135,11 @@ export async function PUT(req: NextRequest, { params }: { params: Params }) {
       const id = slug[0];
       const body = await req.json();
       const { title, description } = body;
-      const note = await updateNoteUseCase.execute({ id, userId, data: { title, description } });
+      const data = {
+        ...(typeof title !== 'undefined' ? { title } : {}),
+        ...(typeof description !== 'undefined' ? { description } : {}),
+      };
+      const note = await updateNoteUseCase.execute({ id, userId, data });
       if (!note) return NextResponse.json({ message: 'Note not found' }, { status: 404 });
       return NextResponse.json(note);
     }

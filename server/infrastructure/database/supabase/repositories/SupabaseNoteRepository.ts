@@ -170,8 +170,39 @@ export class SupabaseNoteRepository implements INoteRepository {
   }
 
   async update(id: string, userId: string, data: Partial<Pick<Note, 'title' | 'description'>>): Promise<Note | null> {
+    const payload = Object.fromEntries(
+      Object.entries(data).filter(([, value]) => typeof value !== 'undefined')
+    ) as Partial<Pick<Note, 'title' | 'description'>>;
+
+    if (Object.keys(payload).length === 0) {
+      throw new Error("No data provided for update.");
+    }
+
+    const { data: currentData, error: currentError } = await supabase
+      .from('notes')
+      .select('*')
+      .match({ id, user_id: userId })
+      .maybeSingle();
+
+    if (currentError) {
+      console.error("Supabase find note before update error:", currentError.message);
+      throw new Error("Could not update note.");
+    }
+
+    if (!currentData) {
+      return null;
+    }
+
+    const nextTitle = typeof payload.title === 'undefined' ? currentData.title : payload.title;
+    const nextDescription =
+      typeof payload.description === 'undefined' ? currentData.description : payload.description;
+
+    if (nextTitle === currentData.title && nextDescription === currentData.description) {
+      return this.mapToNote(currentData);
+    }
+
     const updateData = {
-      ...data,
+      ...payload,
       updated_at: new Date().toISOString(),
     };
 
