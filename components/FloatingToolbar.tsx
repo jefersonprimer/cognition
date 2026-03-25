@@ -22,6 +22,13 @@ type HoveredLink = {
 
 const isCognitionTextLink = (link: HTMLAnchorElement) => link.getAttribute('data-cognition-link') === 'true'
 
+const getClosestCodeFromNode = (node: Node | null): HTMLElement | null => {
+  const element = node instanceof Element ? node : node?.parentElement
+  const code = element?.closest('code') ?? null
+  if (!code?.closest('.note-editor-content')) return null
+  return code as HTMLElement
+}
+
 	type FloatingToolbarProps = {
 	  userName?: string
 	  updatedAt?: string
@@ -108,12 +115,16 @@ const isCognitionTextLink = (link: HTMLAnchorElement) => link.getAttribute('data
   }
 
   const updateActiveStates = () => {
+    const selection = window.getSelection()
+    const anchorCode = selection ? getClosestCodeFromNode(selection.anchorNode) : null
+    const focusCode = selection ? getClosestCodeFromNode(selection.focusNode) : null
+
     setActiveStates({
       bold: document.queryCommandState('bold'),
       italic: document.queryCommandState('italic'),
       underline: document.queryCommandState('underline'),
       strikethrough: document.queryCommandState('strikeThrough'),
-      code: document.queryCommandValue('formatBlock') === 'pre',
+      code: !!anchorCode && anchorCode === focusCode,
     })
   }
 
@@ -480,7 +491,8 @@ const isCognitionTextLink = (link: HTMLAnchorElement) => link.getAttribute('data
         <button
           onMouseDown={(e) => {
             e.preventDefault()
-            execInline('formatBlock', 'pre')
+            document.dispatchEvent(new CustomEvent('floatingToolbarInlineCode'))
+            updateActiveStates()
           }}
           className={`p-1.5 rounded-md transition-colors ${activeStates.code ? 'bg-[#2383e21a] text-[#2383e2]' : 'hover:bg-[#2a2a2a]'}`}
           aria-label="Código"

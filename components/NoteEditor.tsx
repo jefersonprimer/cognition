@@ -483,6 +483,19 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
         useEffect(() => {
             if (!editor) return;
 
+            const handleFloatingToolbarInlineCode = () => {
+                editor.chain().focus().toggleCode().run();
+            };
+
+            document.addEventListener('floatingToolbarInlineCode', handleFloatingToolbarInlineCode);
+            return () => {
+                document.removeEventListener('floatingToolbarInlineCode', handleFloatingToolbarInlineCode);
+            };
+        }, [editor]);
+
+        useEffect(() => {
+            if (!editor) return;
+
             const handleFloatingToolbarLink = (event: Event) => {
                 const customEvent = event as CustomEvent<FloatingToolbarLinkEventDetail>;
                 const detail = customEvent.detail;

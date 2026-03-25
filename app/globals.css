@@ -322,12 +322,17 @@ button {
 /* ── Inline Code ─────────────────────────────────────────────────────────── */
 
 .ProseMirror code {
-  background: #2f2f2f;
+  background: #fef3f2;
   padding: 0.15em 0.35em;
   border-radius: 4px;
   font-size: 0.9em;
-  color: #eb5757;
+  color: #c2410c;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.dark .ProseMirror code {
+  background: #87837826;
+  color: #eb5757;
 }
 
 /* ── Images ──────────────────────────────────────────────────────────────── */
