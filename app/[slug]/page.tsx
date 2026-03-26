@@ -458,7 +458,8 @@ export default function NotePage() {
           { description: currentHtml },
           { headers: { Authorization: `Bearer ${session.accessToken}` } }
         );
-        setLastSavedDescription(currentHtml);
+        // Keep the debounced-saver snapshot in sync with what we just persisted.
+        lastSavedRef.current.description = currentHtml;
       }
 
       router.push(`/${cleanId}?showMoveTo=true&saveParent=true`);

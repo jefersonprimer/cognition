@@ -149,7 +149,7 @@ export default function PageOptionsModal({ isOpen, onClose, userName, updatedAt,
               />
               <MenuItem icon={<Copy size={18} />} label={t('items.duplicate')} shortcut={!isMobile ? t('shortcuts.duplicate') : undefined} />
               <MenuItem icon={<ArrowRight size={18} />} label={t('items.moveTo')} shortcut={!isMobile ? t('shortcuts.moveTo') : undefined} />
-              <MenuItem icon={<Trash2 size={18} />} label={t('items.moveToTrash')} onClick={onDelete} />
+              <MenuItem icon={<Trash2 size={18} />} label={t('items.moveToTrash')} isMoveTrash onClick={onDelete} />
 
               <Divider />
 
@@ -224,12 +224,14 @@ function MenuItem({
   label,
   shortcut,
   hasArrow,
+  isMoveTrash,
   onClick,
 }: {
   icon: React.ReactNode
   label: string
   shortcut?: string
   hasArrow?: boolean
+  isMoveTrash?: boolean
   onClick?: () => void
 }) {
 	  return (
@@ -237,8 +239,10 @@ function MenuItem({
 	      className="flex items-center rounded-md justify-between px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] cursor-pointer transition-colors"
 	      onClick={onClick}
 	    >
-	      <div className="flex items-center gap-2">
-	        <span className="text-gray-500 dark:text-[#bdbdbd] flex items-center justify-center">{icon}</span>
+	      <div 
+          className={`flex items-center gap-2 text-gray-500 dark:text-[#bdbdbd] ${ isMoveTrash ? 'hover:text-[#e56458]' : ''}`}
+        >
+	        <span className="flex items-center justify-center">{icon}</span>
 	        <span className="leading-none text-sm">{label}</span>
 	      </div>
 

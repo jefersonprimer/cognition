@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
 import Link from 'next/link';
 import { GripVertical, Plus, Square, CheckSquare, FileText, Image as ImageIcon, Copy, Check, Pencil, Link2 } from 'lucide-react';
 import { SlashMenu } from './SlashMenu';
@@ -814,8 +815,8 @@ function PageBlock({
   style: React.CSSProperties
   getContainerMargins: () => string
   lineHeight: string
-  attributes: Record<string, unknown>
-  listeners: Record<string, unknown> | undefined
+  attributes: DraggableAttributes
+  listeners: DraggableSyntheticListeners
 }) {
   const liveTitle = useNoteTitle(pageId)
   const resolvedTitle = liveTitle || childTitles[pageId] || storedTitle || 'Nova página'

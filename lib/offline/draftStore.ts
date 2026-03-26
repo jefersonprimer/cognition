@@ -60,7 +60,8 @@ export async function upsertNoteDraft(
 
 export async function getNoteDraft(userId: string, noteId: string): Promise<NoteDraft | null> {
   const key = makeKey(userId, noteId);
-  return ensureDb().drafts.get(key);
+  const draft = await ensureDb().drafts.get(key);
+  return draft ?? null;
 }
 
 export async function clearNoteDraft(userId: string, noteId: string): Promise<void> {
