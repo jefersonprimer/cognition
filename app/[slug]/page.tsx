@@ -290,15 +290,68 @@ export default function NotePage() {
     window.history.replaceState(null, '', `/${newSlug}${currentSearch}`);
   };
 
-  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
-    e.preventDefault();
+  const focusTitleAtEnd = () => {
+    const textarea = titleInputRef.current;
+    if (!textarea) return;
+    textarea.focus();
+    const end = textarea.value.length;
+    // Garantir posição do cursor após o foco.
+    requestAnimationFrame(() => {
+      textarea.selectionStart = textarea.selectionEnd = end;
+    });
+  };
+
+  const firstTextblockHasContent = (editor: any): boolean => {
+    let hasContent = false;
+    const doc = editor?.state?.doc;
+    if (!doc) return false;
+
+    doc.descendants((node: any) => {
+      if (hasContent) return false;
+      if (!node?.isTextblock) return true;
+      hasContent = (node.textContent || '').trim().length > 0;
+      return false; // primeira textblock em ordem
+    });
+
+    return hasContent;
+  };
+
+  const focusDescriptionAtStart = ({ splitFirstTextblockIfHasContent }: { splitFirstTextblockIfHasContent?: boolean } = {}) => {
     const editor = noteEditorRef.current?.getEditor();
-    if (editor) {
-      editor.commands.focus('start');
+    if (!editor) {
+      noteEditorRef.current?.focus();
       return;
     }
-    noteEditorRef.current?.focus();
+
+    editor.commands.focus('start');
+
+    if (splitFirstTextblockIfHasContent && firstTextblockHasContent(editor)) {
+      editor.commands.splitBlock();
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.nativeEvent.isComposing) return;
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      focusDescriptionAtStart({ splitFirstTextblockIfHasContent: true });
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      focusDescriptionAtStart();
+      return;
+    }
+
+    if (e.key === 'ArrowRight') {
+      const textarea = e.currentTarget;
+      const atEnd = textarea.selectionEnd >= textarea.value.length;
+      if (!atEnd) return;
+      e.preventDefault();
+      focusDescriptionAtStart();
+    }
   };
 
   const copyTextToClipboard = async (text: string) => {
@@ -676,6 +729,7 @@ export default function NotePage() {
                 onChange={setEditorHtml}
                 onPageCreate={handleCreatePageFromEditor}
                 onFocus={() => isMobile && setIsMobileToolbarVisible(true)}
+                onRequestFocusTitleAtEnd={focusTitleAtEnd}
                 onBlur={() => {
                   // Small delay to allow clicking buttons in the toolbar before it hides
                   setTimeout(() => setIsMobileToolbarVisible(false), 200);

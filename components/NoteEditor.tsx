@@ -39,6 +39,7 @@ type NoteEditorProps = {
     onPageCreate?: () => void;
     editable?: boolean;
     onSelectionChange?: (position: { top: number; left: number } | null) => void;
+    onRequestFocusTitleAtEnd?: () => void;
 };
 
 type UrlChoice = 'mention' | 'url' | 'bookmark' | 'embed';
@@ -186,7 +187,7 @@ function migrateNolioPageLinksToDiv(html: string): string {
 
 const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
     function NoteEditor(
-        { initialContent, onChange, onFocus, onBlur, onPageCreate, onSelectionChange, editable = true },
+        { initialContent, onChange, onFocus, onBlur, onPageCreate, onSelectionChange, onRequestFocusTitleAtEnd, editable = true },
         ref
     ) {
         const hasInitialisedRef = useRef(false);
@@ -328,11 +329,20 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
                     },
                 },
                 handleKeyDown: (view, event) => {
+                    const selection = view.state.selection;
+                    const isCursorAtStart =
+                        selection.empty && selection.from <= 1 && onRequestFocusTitleAtEnd && !(selection instanceof NodeSelection);
+
+                    if (isCursorAtStart && (event.key === 'Backspace' || event.key === 'ArrowUp' || event.key === 'ArrowLeft')) {
+                        event.preventDefault();
+                        onRequestFocusTitleAtEnd?.();
+                        return true;
+                    }
+
                     if (event.key !== 'Backspace' && event.key !== 'Delete') {
                         return false;
                     }
 
-                    const selection = view.state.selection;
                     if (!(selection instanceof NodeSelection)) {
                         return false;
                     }
