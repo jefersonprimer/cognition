@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { motion } from "framer-motion";
 import {
   Search,
   Home,
@@ -22,27 +22,31 @@ import {
   ChevronsLeft,
   History,
   type LucideIcon,
-} from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { useLayout } from '@/context/LayoutContext';
-import { useFavorite } from '@/context/FavoriteContext';
-import api from '@/lib/api';
-import { Note } from '@/types/note';
-import UserModal from './UserModal';
-import SidebarItem, { SidebarItemSkeleton } from './SidebarItem';
-import SearchModal from './SearchModal';
-import TrashModal from './TrashModal';
-import SettingsModal from './SettingsModal';
-import MoreOptionsModal from './MoreOptionsModal';
+} from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useLayout } from "@/context/LayoutContext";
+import { useFavorite } from "@/context/FavoriteContext";
+import api from "@/lib/api";
+import { Note } from "@/types/note";
+import UserModal from "./UserModal";
+import SidebarItem, { SidebarItemSkeleton } from "./SidebarItem";
+import SearchModal from "./SearchModal";
+import TrashModal from "./TrashModal";
+import SettingsModal from "./SettingsModal";
+import MoreOptionsModal from "./MoreOptionsModal";
 
-export default function Sidebar({ isFloating = false }: { isFloating?: boolean }) {
-  const t = useTranslations('Sidebar');
+export default function Sidebar({
+  isFloating = false,
+}: {
+  isFloating?: boolean;
+}) {
+  const t = useTranslations("Sidebar");
   const { session } = useAuth();
   const { setIsSidebarOpen } = useLayout();
   const { favoriteNotes, isLoading: isLoadingFavorites } = useFavorite();
   const router = useRouter();
   const pathname = usePathname();
-  const userName = session?.user?.name?.trim() || t('user.fallbackName');
+  const userName = session?.user?.name?.trim() || t("user.fallbackName");
   const [rootNotes, setRootNotes] = useState<Note[]>([]);
   const [loadingRootNotes, setLoadingRootNotes] = useState(true);
   const [expandedSections, setExpandedSections] = useState({
@@ -50,7 +54,7 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
     particular: true,
     compartilhado: true,
     aplicativos: true,
-    configs: false
+    configs: false,
   });
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
@@ -58,7 +62,10 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isMoreOptionsModalOpen, setIsMoreOptionsModalOpen] = useState(false);
   const [userModalPos, setUserModalPos] = useState({ top: 0, left: 0 });
-  const [moreOptionsModalPos, setMoreOptionsModalPos] = useState({ top: 0, left: 0 });
+  const [moreOptionsModalPos, setMoreOptionsModalPos] = useState({
+    top: 0,
+    left: 0,
+  });
   const sidebarRef = useRef<HTMLDivElement>(null);
   const touchStartXRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
@@ -72,7 +79,9 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target;
       const targetElement = target instanceof Element ? target : null;
-      const clickedInsideSettingsModal = targetElement?.closest('.settings-modal-container');
+      const clickedInsideSettingsModal = targetElement?.closest(
+        ".settings-modal-container",
+      );
 
       if (
         window.innerWidth < 768 &&
@@ -85,9 +94,9 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [setIsSidebarOpen]);
 
@@ -96,14 +105,14 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
       if (!session) return;
       setLoadingRootNotes(true);
       try {
-        const response = await api.get('/notes', {
+        const response = await api.get("/notes", {
           headers: {
-            Authorization: `Bearer ${session.accessToken}`
-          }
+            Authorization: `Bearer ${session.accessToken}`,
+          },
         });
         setRootNotes(response.data);
       } catch (error) {
-        console.error('Error fetching root notes:', error);
+        console.error("Error fetching root notes:", error);
       } finally {
         setLoadingRootNotes(false);
       }
@@ -112,28 +121,32 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
   }, [session]);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
   const handleCreateNote = async () => {
     if (!session) return;
     try {
-      const response = await api.post('/notes', { title: "" }, {
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`
-        }
-      });
+      const response = await api.post(
+        "/notes",
+        { title: "" },
+        {
+          headers: {
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+        },
+      );
       const newNote = response.data;
-      const cleanId = newNote.id.replace(/-/g, '');
+      const cleanId = newNote.id.replace(/-/g, "");
       const url = `/${cleanId}?showMoveTo=true&saveParent=true`;
 
       router.push(url);
-      setRootNotes(prev => [newNote, ...prev]);
+      setRootNotes((prev) => [newNote, ...prev]);
     } catch (error: unknown) {
-      console.error('Error creating note:', error);
+      console.error("Error creating note:", error);
     }
   };
 
@@ -142,20 +155,24 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
     e.stopPropagation();
     if (!session) return;
     try {
-      const response = await api.post('/notes', { title: "", parentId }, {
-        headers: { Authorization: `Bearer ${session.accessToken}` }
-      });
+      const response = await api.post(
+        "/notes",
+        { title: "", parentId },
+        {
+          headers: { Authorization: `Bearer ${session.accessToken}` },
+        },
+      );
       const newNote = response.data;
-      const cleanId = newNote.id.replace(/-/g, '');
+      const cleanId = newNote.id.replace(/-/g, "");
       const url = `/${cleanId}?showMoveTo=true&saveParent=true`;
       router.push(url);
     } catch (error: unknown) {
-      console.error('Error creating child note:', error);
+      console.error("Error creating child note:", error);
     }
   };
 
   const handleDeleteRootNote = (noteId: string) => {
-    setRootNotes(prev => prev.filter(n => n.id !== noteId));
+    setRootNotes((prev) => prev.filter((n) => n.id !== noteId));
   };
 
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
@@ -174,7 +191,12 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
   };
 
   const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (window.innerWidth >= 768 || isFloating || touchStartXRef.current === null || touchStartYRef.current === null) {
+    if (
+      window.innerWidth >= 768 ||
+      isFloating ||
+      touchStartXRef.current === null ||
+      touchStartYRef.current === null
+    ) {
       return;
     }
 
@@ -243,9 +265,17 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className={`group/sidebar w-80 md:w-60 bg-white text-gray-700 dark:bg-[#202020] dark:text-[#ada9a3] flex flex-col text-sm select-none ${isFloating ? 'h-full max-h-[70vh]' : 'h-screen border-r border-gray-200 dark:border-[#2f2f2f]'} ${!isFloating ? 'fixed inset-y-0 left-0 z-50 md:relative' : ''}`}
-        animate={!isFloating ? { x: isSwipeClosing ? -320 : swipeOffsetX } : undefined}
-        transition={!isFloating ? (isSwiping ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }) : undefined}
+        className={`group/sidebar w-80 md:w-60 bg-white text-gray-700 dark:bg-[#202020] dark:text-[#ada9a3] flex flex-col text-sm select-none ${isFloating ? "h-full max-h-[70vh]" : "h-screen border-r border-gray-200 dark:border-[#2f2f2f]"} ${!isFloating ? "fixed inset-y-0 left-0 z-50 md:relative" : ""}`}
+        animate={
+          !isFloating ? { x: isSwipeClosing ? -320 : swipeOffsetX } : undefined
+        }
+        transition={
+          !isFloating
+            ? isSwiping
+              ? { duration: 0 }
+              : { duration: 0.2, ease: "easeOut" }
+            : undefined
+        }
         onAnimationComplete={() => {
           if (isSwipeClosing) {
             setIsSidebarOpen(false);
@@ -254,7 +284,7 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
       >
         {/* Header */}
         <div
-          className={`group relative flex items-center justify-between mt-1.5 mx-2 rounded-md transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-[#252525] ${isUserModalOpen ? 'bg-gray-100 dark:bg-[#252525]' : ''}`}
+          className={`group relative flex items-center justify-between mt-1.5 mx-2 rounded-md transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-[#252525] ${isUserModalOpen ? "bg-gray-100 dark:bg-[#252525]" : ""}`}
         >
           <div
             onClick={(e) => {
@@ -282,9 +312,12 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
             {/* Collapse Button (Shown on Hover) */}
             {!isFloating && (
               <button
-                onClick={(e) => { e.stopPropagation(); setIsSidebarOpen(false); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsSidebarOpen(false);
+                }}
                 className="hidden group-hover/sidebar:flex items-center justify-center w-7 h-7 hover:bg-gray-200 rounded text-gray-600 hover:text-gray-900 dark:hover:bg-[#3f3f3f] dark:text-[#ada9a3] dark:hover:text-white"
-                title={t('actions.closeSidebarTitle')}
+                title={t("actions.closeSidebarTitle")}
               >
                 <ChevronsLeft size={20} />
               </button>
@@ -292,9 +325,12 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
 
             {/* Default Icons */}
             <button
-              onClick={(e) => { e.stopPropagation(); handleCreateNote(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCreateNote();
+              }}
               className="flex items-center justify-center w-7 h-7 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors dark:text-[#ada9a3] dark:hover:text-white dark:hover:bg-[#2f2f2f]"
-              title={t('actions.createPageTitle')}
+              title={t("actions.createPageTitle")}
             >
               <SquarePen size={18} />
             </button>
@@ -303,11 +339,14 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
               onClick={(e) => {
                 e.stopPropagation();
                 const rect = e.currentTarget.getBoundingClientRect();
-                setMoreOptionsModalPos({ top: rect.bottom + 5, left: rect.left - 40 });
+                setMoreOptionsModalPos({
+                  top: rect.bottom + 5,
+                  left: rect.left - 40,
+                });
                 setIsMoreOptionsModalOpen(true);
               }}
-              className={`flex items-center justify-center w-5 h-7 hover:bg-gray-200 rounded hover:text-gray-900 dark:hover:bg-[#3f3f3f] dark:hover:text-white ${isMoreOptionsModalOpen ? 'bg-gray-200 text-gray-900 dark:bg-[#3f3f3f] dark:text-white' : 'text-gray-600 dark:text-[#ada9a3]'}`}
-              title={t('actions.moreOptionsTitle')}
+              className={`flex items-center justify-center w-5 h-7 hover:bg-gray-200 rounded hover:text-gray-900 dark:hover:bg-[#3f3f3f] dark:hover:text-white ${isMoreOptionsModalOpen ? "bg-gray-200 text-gray-900 dark:bg-[#3f3f3f] dark:text-white" : "text-gray-600 dark:text-[#ada9a3]"}`}
+              title={t("actions.moreOptionsTitle")}
             >
               <ChevronDown size={14} />
             </button>
@@ -315,30 +354,45 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
         </div>
 
         <div className="px-2 py-1">
-          <NavItem icon={<Search size={20} />} label={t('nav.search.label')} onClick={() => setIsSearchModalOpen(true)} title={t('nav.search.title')} />
-          <NavItem icon={<Home size={20} />} label={t('nav.home.label')} href="/" isActive={pathname === '/'} title={t('nav.home.title')} />
+          <NavItem
+            icon={<Search size={20} />}
+            label={t("nav.search.label")}
+            onClick={() => setIsSearchModalOpen(true)}
+            title={t("nav.search.title")}
+          />
+          <NavItem
+            icon={<Home size={20} />}
+            label={t("nav.home.label")}
+            href="/"
+            isActive={pathname === "/"}
+            title={t("nav.home.title")}
+          />
           <NavItem
             icon={<Users size={20} />}
-            label={t('nav.meetings.label')}
-            title={t('nav.meetings.title')}
+            label={t("nav.meetings.label")}
+            title={t("nav.meetings.title")}
             onHoverClick={() => {
               // Logica para criar nova anotação IA
               handleCreateNote();
             }}
-            hoverIconTitle={t('nav.meetings.hoverIconTitle')}
+            hoverIconTitle={t("nav.meetings.hoverIconTitle")}
           />
           <NavItem
             icon={<Sparkle size={20} />}
-            label={t('nav.ai.label')}
-            title={t('nav.ai.title')}
+            label={t("nav.ai.label")}
+            title={t("nav.ai.title")}
             onHoverClick={() => {
               // Logica para ver histórico do chat
-              console.log(t('nav.ai.openChatHistoryLog'));
+              console.log(t("nav.ai.openChatHistoryLog"));
             }}
             hoverIcon={History}
-            hoverIconTitle={t('nav.ai.hoverIconTitle')}
+            hoverIconTitle={t("nav.ai.hoverIconTitle")}
           />
-          <NavItem icon={<Inbox size={20} />} label={t('nav.inbox.label')} title={t('nav.inbox.title')} />
+          <NavItem
+            icon={<Inbox size={20} />}
+            label={t("nav.inbox.label")}
+            title={t("nav.inbox.title")}
+          />
         </div>
 
         {/* Scrollable Content */}
@@ -347,7 +401,7 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
           {(isLoadingFavorites || favoriteNotes.length > 0) && (
             <div className="mt-4 px-2">
               <div className="px-2 py-1 text-xs font-medium text-gray-500 dark:text-[#9b9b9b]">
-                {t('sections.favorites')}
+                {t("sections.favorites")}
               </div>
               {expandedSections.favoritos && (
                 <div className="py-1">
@@ -358,7 +412,7 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
                       ))}
                     </div>
                   ) : (
-                    favoriteNotes.map(note => (
+                    favoriteNotes.map((note) => (
                       <SidebarItem
                         key={`fav-${note.id}`}
                         note={note}
@@ -378,11 +432,14 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
           {/* Particular Section */}
           <div className="mt-4 px-2">
             <button
-              onClick={() => toggleSection('particular')}
+              onClick={() => toggleSection("particular")}
               className="w-full flex items-center justify-between px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors group dark:text-[#9b9b9b] dark:hover:bg-[#2f2f2f] dark:hover:text-[#ada9a3]"
             >
-              <span>{t('sections.private')}</span>
-              <Plus size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span>{t("sections.private")}</span>
+              <Plus
+                size={14}
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+              />
             </button>
 
             {expandedSections.particular && (
@@ -393,10 +450,12 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
                       <SidebarItemSkeleton key={i} />
                     ))}
                   </div>
-                  ) : rootNotes.length === 0 ? (
-                  <div className="px-2 py-1 text-xs text-gray-400 dark:text-[#555]">{t('sections.noNotes')}</div>
+                ) : rootNotes.length === 0 ? (
+                  <div className="px-2 py-1 text-xs text-gray-400 dark:text-[#555]">
+                    {t("sections.noNotes")}
+                  </div>
                 ) : (
-                  rootNotes.map(note => (
+                  rootNotes.map((note) => (
                     <SidebarItem
                       key={note.id}
                       note={note}
@@ -415,12 +474,12 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
           {/* Compartilhado Section */}
           <div className="mt-4 px-2">
             <div className="px-2 py-1 text-xs font-medium text-gray-500 dark:text-[#9b9b9b]">
-              {t('sections.shared')}
+              {t("sections.shared")}
             </div>
             <div className=" py-1">
               <button className="flex items-center text-sm gap-2 px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-[#2f2f2f] rounded w-full text-left transition-colors">
                 <Plus size={16} />
-                <span>{t('sections.startCollaborating')}</span>
+                <span>{t("sections.startCollaborating")}</span>
               </button>
             </div>
           </div>
@@ -428,24 +487,38 @@ export default function Sidebar({ isFloating = false }: { isFloating?: boolean }
           {/* Aplicativos do Nolio */}
           <div className="mt-4 px-2">
             <div className="px-2 py-1 text-xs font-medium text-gray-500 dark:text-[#9b9b9b]">
-              {t('sections.apps')}
+              {t("sections.apps")}
             </div>
             <div className="py-1">
-              <NavItem icon={<Mail size={20} />} label={t('apps.mail')} />
-              <NavItem icon={<Calendar size={20} />} label={t('apps.calendar')} />
-              <NavItem 
-                icon={<Smartphone size={20} />} 
-                label={t('apps.android')} 
-                href="https://github.com/jefersonprimer/nolio/releases/tag/v1.0.0"
+              <NavItem icon={<Mail size={20} />} label={t("apps.mail")} />
+              <NavItem
+                icon={<Calendar size={20} />}
+                label={t("apps.calendar")}
+              />
+              <NavItem
+                icon={<Smartphone size={20} />}
+                label={t("apps.android")}
+                href="https://github.com/jefersonprimer/nolio-app/releases/tag/v1.0.0"
                 target="_blank"
                 rel="noopener noreferrer"
               />
             </div>
 
             <div className="my-4 text-base">
-              <NavItem icon={<Settings size={20} />} label={t('apps.settings')} onClick={() => setIsSettingsModalOpen(true)} />
-              <NavItem icon={<Layers size={20} />} label={t('apps.templates')} />
-              <NavItem icon={<Trash2 size={20} />} label={t('apps.trash')} onClick={() => setIsTrashModalOpen(true)} />
+              <NavItem
+                icon={<Settings size={20} />}
+                label={t("apps.settings")}
+                onClick={() => setIsSettingsModalOpen(true)}
+              />
+              <NavItem
+                icon={<Layers size={20} />}
+                label={t("apps.templates")}
+              />
+              <NavItem
+                icon={<Trash2 size={20} />}
+                label={t("apps.trash")}
+                onClick={() => setIsTrashModalOpen(true)}
+              />
             </div>
           </div>
         </div>
@@ -498,7 +571,7 @@ function NavItem({
   hoverIconTitle,
   target,
   rel,
-  hoverIcon: HoverIcon = Plus
+  hoverIcon: HoverIcon = Plus,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -516,8 +589,8 @@ function NavItem({
     <div
       className={`flex items-center gap-2 px-2 py-1.5 rounded-md w-full text-left transition-colors truncate ${
         isActive
-          ? 'bg-gray-100 text-gray-900 dark:bg-[#2f2f2f] dark:text-white'
-          : 'hover:bg-gray-100 text-gray-700 hover:text-gray-900 dark:hover:bg-[#2f2f2f] dark:text-[#ada9a3] dark:hover:text-white'
+          ? "bg-gray-100 text-gray-900 dark:bg-[#2f2f2f] dark:text-white"
+          : "hover:bg-gray-100 text-gray-700 hover:text-gray-900 dark:hover:bg-[#2f2f2f] dark:text-[#ada9a3] dark:hover:text-white"
       }`}
     >
       <span className="shrink-0">{icon}</span>
@@ -542,7 +615,13 @@ function NavItem({
 
   if (href) {
     return (
-      <Link href={href} className={containerClasses} title={title} target={target} rel={rel}>
+      <Link
+        href={href}
+        className={containerClasses}
+        title={title}
+        target={target}
+        rel={rel}
+      >
         {content}
       </Link>
     );
